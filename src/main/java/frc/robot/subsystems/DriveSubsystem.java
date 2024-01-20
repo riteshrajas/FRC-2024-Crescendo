@@ -192,13 +192,13 @@ public class DriveSubsystem extends SubsystemBase
     // -- Commands
     // -------------------------------------------------------------------------------------------------------------------------------------
 
-    public CommandBase Command_DriveStraight(double metersPerSecond)
+    public Command Command_DriveStraight(double metersPerSecond)
     {
         return run( () -> setChassisSpeeds(new ChassisSpeeds(metersPerSecond, 0, 0)) )
                 .beforeStarting(new PrintCommand(System.currentTimeMillis() + "  Drive Straight " + metersPerSecond));
     }
 
-    public CommandBase Command_DriveDistance(double metersPerSecond, double distanceInMeters)
+    public Command Command_DriveDistance(double metersPerSecond, double distanceInMeters)
     {
         final AtomicReference<Pose2d> startingPose = new AtomicReference<>(); // wrapper to allow us to change captured object inside a lambda
 
@@ -219,7 +219,7 @@ public class DriveSubsystem extends SubsystemBase
     // -- Internal Commands
     // -------------------------------------------------------------------------------------------------------------------------------------
     
-    private CommandBase Command_CalibrateSwerve()
+    private Command Command_CalibrateSwerve()
     {
         return runOnce(() ->
         {

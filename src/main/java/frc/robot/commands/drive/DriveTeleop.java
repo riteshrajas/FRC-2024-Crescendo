@@ -1,11 +1,11 @@
 /*This NEEDS to be rewriten */
-package frc.robot.commands.drive;
+package frc.robot.Commands.drive;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.IMU;
 import frc.robot.OI;
@@ -29,7 +29,7 @@ import friarLib2.utility.Vector3309;
  * teleop control while being able to set the rotational speed 
  * independently (based on vision data for example).
  */
-public class DriveTeleop extends CommandBase {
+public class DriveTeleop extends Command {
 
     private static final double OutputRange = 0.2;
 

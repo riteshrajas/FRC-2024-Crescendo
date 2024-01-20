@@ -4,16 +4,14 @@
 
 package frc.robot;
 
-import com.pathplanner.lib.PathConstraints;
-import com.pathplanner.lib.PathPlanner;
-import com.pathplanner.lib.auto.SwerveAutoBuilder;
+
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.commands.drive.DriveTeleop;
-import frc.robot.commands.drive.TurnInDirectionOfTarget;
+import frc.robot.Commands.drive.DriveTeleop;
+import frc.robot.Commands.drive.TurnInDirectionOfTarget;
 import frc.robot.subsystems.DriveSubsystem;
 import java.util.HashMap;
 
@@ -30,7 +28,7 @@ public class RobotContainer
     private final DriveSubsystem _Drive = new DriveSubsystem();
 
     // -- Auto
-    private SwerveAutoBuilder AutoBuilder = null;
+    // private SwerveAutoBuilder AutoBuilder = null;
     private final SendableChooser<Command> AutoChooser = new SendableChooser<>();
 
 
@@ -38,8 +36,8 @@ public class RobotContainer
     {
         ConfigureBindings();
         SetDefaultCommands();
-        ConfigureSwerveAutoBuilder();
-        ConfigureAutoCommands();
+        // ConfigureSwerveAutoBuilder();
+        // ConfigureAutoCommands();
     }
 
 
@@ -82,40 +80,40 @@ public class RobotContainer
     }
 
 
-    private void ConfigureSwerveAutoBuilder()
-    {
-        // -- Map Path Planner events to Commands
-        HashMap<String, Command> eventMap = new HashMap<>();
+    // private void ConfigureSwerveAutoBuilder()
+    // {
+    //     // -- Map Path Planner events to Commands
+    //     HashMap<String, Command> eventMap = new HashMap<>();
 
-        // eventMap.put("BalanceForward", _Drive.Command_AutoBalance(DriveSubsystem.Direction.Forward));
-        // eventMap.put("BalanceBackward", _Drive.Command_AutoBalance(DriveSubsystem.Direction.Reverse));
+    //     // eventMap.put("BalanceForward", _Drive.Command_AutoBalance(DriveSubsystem.Direction.Forward));
+    //     // eventMap.put("BalanceBackward", _Drive.Command_AutoBalance(DriveSubsystem.Direction.Reverse));
 
-        eventMap.put("Wait", new WaitCommand(1));
+    //     eventMap.put("Wait", new WaitCommand(1));
 
-        // -- Builder
-        AutoBuilder = new SwerveAutoBuilder(
-                _Drive::GetPose, // Pose2d supplier
-                _Drive::HardResetOdometry, // Pose2d consumer, used to reset odometry at the beginning of auto
-                _Drive.GetKinematics(), // SwerveDriveKinematics
-                Constants.Drive.HOLONOMIC_CONTROLLER_PID_XY_CONSTRAINTS, // PID constants to correct for translation error (used to create the X and Y PID controllers)
-                Constants.Drive.HOLONOMIC_CONTROLLER_PID_ROTATIONAL_CONSTRAINTS, // PID constants to correct for rotation error (used to create the rotation controller)
-                _Drive::setModuleStates, // Module states consumer used to output to the drive subsystem
-                eventMap,
-                true, // Should the path be automatically mirrored depending on alliance color. Optional, defaults to true
-            _Drive // The drive subsystem. Used to properly set the requirements of path following commands
-        );
-    }
+    //     // -- Builder
+    //     AutoBuilder = new SwerveAutoBuilder(
+    //             _Drive::GetPose, // Pose2d supplier
+    //             _Drive::HardResetOdometry, // Pose2d consumer, used to reset odometry at the beginning of auto
+    //             _Drive.GetKinematics(), // SwerveDriveKinematics
+    //             Constants.Drive.HOLONOMIC_CONTROLLER_PID_XY_CONSTRAINTS, // PID constants to correct for translation error (used to create the X and Y PID controllers)
+    //             Constants.Drive.HOLONOMIC_CONTROLLER_PID_ROTATIONAL_CONSTRAINTS, // PID constants to correct for rotation error (used to create the rotation controller)
+    //             _Drive::setModuleStates, // Module states consumer used to output to the drive subsystem
+    //             eventMap,
+    //             true, // Should the path be automatically mirrored depending on alliance color. Optional, defaults to true
+    //         _Drive // The drive subsystem. Used to properly set the requirements of path following commands
+    //     );
+    // }
 
-    private Command GetPathPlannerAutoCommand(String name)
-    {
-        return AutoBuilder.fullAuto(PathPlanner.loadPathGroup(name, new PathConstraints(1, .5)));
-    }
+    // private Command GetPathPlannerAutoCommand(String name)
+    // {
+    //     return AutoBuilder.fullAuto(PathPlanner.loadPathGroup(name, new PathConstraints(1, .5)));
+    // }
 
-    private void ConfigureAutoCommands()
-    {
-        AutoChooser.setDefaultOption("No auto", new WaitUntilCommand(0));
-        SmartDashboard.putData(AutoChooser);
-    }
+    // private void ConfigureAutoCommands()
+    // {
+    //     AutoChooser.setDefaultOption("No auto", new WaitUntilCommand(0));
+    //     SmartDashboard.putData(AutoChooser);
+    // }
 
 }
 
