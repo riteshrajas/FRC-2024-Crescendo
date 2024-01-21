@@ -75,6 +75,35 @@ public final class Constants {
         public static final double MAX_TELEOP_ACCELERATION = 10; // Maters/second squared
         public static final double MAX_TELEOP_DECELERATION = 11;
     }
+
+    public class Intake 
+    {
+        /********** CAN ID's **********/
+        public static final int TOP_INTAKE_MOTOR_ID = 4;
+        public static final int BOTTOM_INTAKE_MOTOR_ID = 3;
+        public static final int PIVOT_MOTOR_ID = 10;
+ 
+        /********** Amp Scoring **********/
+        public static final double TOP_INTAKE_MOTOR_AMP_POWER = 1;
+        public static final double BOTTOM_INTAKE_MOTOR_AMP_POWER = 1;
+
+        /********** Amp Scoring **********/
+        public static final double TOP_INTAKE_MOTOR_INTAKE_POWER = 1;
+        public static final double BOTTOM_INTAKE_MOTOR_INTAKE_POWER = 1;
+
+        /********** Amp Scoring **********/
+        public static final double TOP_INTAKE_MOTOR_TRAP_POWER = 1;
+        public static final double BOTTOM_INTAKE_MOTOR_TRAP_POWER = 1;
+
+        /********** pivot **********/
+        public static final double PIVOT_MOTOR_POWER = 1;
+
+        /******** Misc ********/
+        public static final double TargetThreshold = 10;
+
+        public static final PIDParameters PIVOT_MOTOR_PID = new PIDParameters(0, "Pivot Motor PID", 0.02, 0.0, 0.25, 0.0, 50); //all of the stuff in this are placeholders
+
+    }
 }
 
 
