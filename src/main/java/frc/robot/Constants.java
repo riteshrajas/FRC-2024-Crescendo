@@ -104,6 +104,11 @@ public final class Constants {
         public static final PIDParameters PIVOT_MOTOR_PID = new PIDParameters(0, "Pivot Motor PID", 0.02, 0.0, 0.25, 0.0, 50); //all of the stuff in this are placeholders
 
     }
+
+    public class Arm
+    {
+        
+    }
 }
 
 
