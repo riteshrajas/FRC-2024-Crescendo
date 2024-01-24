@@ -3,14 +3,20 @@ package frc.robot.subsystems;
 import java.util.Map;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.ControlModeValue;
 
 import edu.wpi.first.util.WPICleaner;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import friarLib2.utility.PIDParameters;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix6.configs.*;
 import com.ctre.phoenix6.controls.compound.*;
+import com.ctre.phoenix6.configs.jni.ConfigJNI;
+//*TODO: Find acutal poses, work out motor configurations, do commmands  and logic for moving pivot
 
 
 
@@ -83,12 +89,20 @@ public class IntakeSusbsystem extends SubsystemBase
     private TalonFX PivotMotor = new TalonFX(Constants.Intake.PIVOT_MOTOR_ID);
     private TalonFX IntakeMotor = new TalonFX(Constants.Intake.INTAKE_MOTOR_ID);
     
+    
 
     public IntakeSusbsystem()
     {
-    
-    }    
+        PivotMotor.getConfigurator().apply(new TalonFXConfiguration());
+        IntakeMotor.getConfigurator().apply(new TalonFXConfiguration());
+    }
+
+    public Command Command_powerIntake(double IntakePower)
+    {
+        return run(() -> IntakeMotor.set(IntakePower));
+    }
        
+    
     
     
 
