@@ -27,6 +27,7 @@ public class IntakeSusbsystem extends SubsystemBase
         Stowed,
         Intake,
         Amp,
+        Trap,
         Index,
     }
 
@@ -78,6 +79,12 @@ public class IntakeSusbsystem extends SubsystemBase
             new PivotPose(0)
         ),
 
+        //Trap
+        Map.entry(PivotPosition_enum.Trap,
+            new PivotPose(0)
+        ),
+
+
         //Index
         Map.entry(PivotPosition_enum.Index,
             new PivotPose(0)
@@ -93,16 +100,36 @@ public class IntakeSusbsystem extends SubsystemBase
 
     public IntakeSusbsystem()
     {
-        PivotMotor.getConfigurator().apply(new TalonFXConfiguration());
-        IntakeMotor.getConfigurator().apply(new TalonFXConfiguration());
+        ConfigureMotors(PivotMotor, 0, 0, 0, 0); //TODO: tune me
+        ConfigureMotors(IntakeMotor, 0, 0, 0, 0); //TODO: tune me
     }
+
+    private void ConfigureMotors(TalonFX motor, double kV, double kP, double kI, double kD)
+    {
+        var slot0Configs = new Slot0Configs();
+        slot0Configs.kV = kV;
+        slot0Configs.kP = kP;
+        slot0Configs.kI = kI;
+        slot0Configs.kD = kD;
+
+        // apply gains, 50 ms total timeout
+        motor.getConfigurator().apply(slot0Configs, 0.050);
+    }
+
+    
+
+    public boolean IntakehasNote()
+    {
+        return true; //TODO: finish code when sensors arrive
+    }
+
+
 
     public Command Command_powerIntake(double IntakePower)
     {
         return run(() -> IntakeMotor.set(IntakePower));
     }
-       
-    
+
     
     
 
