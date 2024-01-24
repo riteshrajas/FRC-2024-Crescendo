@@ -1,4 +1,4 @@
-package main.java.frc.robot.CTRSwerve;
+package frc.robot.CTRSwerve;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;

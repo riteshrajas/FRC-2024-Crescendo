@@ -1,4 +1,4 @@
-package main.java.frc.robot.CTRSwerve;
+package frc.robot.CTRSwerve;
 
 public class SwerveDriveTrainConstants {
     /** CAN ID of the Pigeon2 on the drivetrain */

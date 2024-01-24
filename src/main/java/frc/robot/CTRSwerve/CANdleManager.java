@@ -1,4 +1,4 @@
-package main.java.frc.robot.CTRSwerve;
+package frc.robot.CTRSwerve;
 
 import com.ctre.phoenix.led.CANdle;
 import edu.wpi.first.math.geometry.Rotation2d;

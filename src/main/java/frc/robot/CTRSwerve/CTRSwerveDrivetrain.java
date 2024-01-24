@@ -1,4 +1,4 @@
-package main.java.frc.robot.CTRSwerve;
+package frc.robot.CTRSwerve;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.Utils;
@@ -64,7 +64,7 @@ public class CTRSwerveDrivetrain {
                 m_allSignals[(i * 4) + 3] = signals[3];
             }
             m_allSignals[m_allSignals.length - 2] = m_pigeon2.getYaw();
-            m_allSignals[m_allSignals.length - 1] = m_pigeon2.getAngularVelocityZ();
+            m_allSignals[m_allSignals.length - 1] = m_pigeon2.getAngularVelocityZDevice();
         }
 
         @Override
@@ -96,7 +96,7 @@ public class CTRSwerveDrivetrain {
                 // Assume Pigeon2 is flat-and-level so latency compensation can be performed
                 double yawDegrees =
                         BaseStatusSignal.getLatencyCompensatedValue(
-                                m_pigeon2.getYaw(), m_pigeon2.getAngularVelocityZ());
+                                m_pigeon2.getYaw(), m_pigeon2.getAngularVelocityZDevice());
 
                 m_odometry.update(Rotation2d.fromDegrees(yawDegrees), m_modulePositions);
                 m_field.setRobotPose(m_odometry.getPoseMeters());
