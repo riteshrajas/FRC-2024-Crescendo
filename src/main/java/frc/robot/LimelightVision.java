@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import friarLib2.vision.LimelightCamera;
 import friarLib2.vision.IVisionCamera;
 import friarLib2.vision.utility.PixelToAngle;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
 /**
@@ -54,4 +55,9 @@ public class LimelightVision {
         } catch (IndexOutOfBoundsException e) {} // If the camera has no target the target has no 
         return lastDistance;
     }
+
+    public void outputToSmartDashboard() {
+        SmartDashboard.putNumber("Distance to target: ", lastDistance);
+    }
+    
 }

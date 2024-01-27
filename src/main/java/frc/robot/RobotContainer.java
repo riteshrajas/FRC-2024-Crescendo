@@ -10,8 +10,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Commands.drive.DriveTeleop;
-import frc.robot.Commands.drive.TurnInDirectionOfTarget;
+import frc.robot.commands.drive.DriveTeleop;
+import frc.robot.commands.drive.TurnInDirectionOfTarget;
 import frc.robot.subsystems.DriveSubsystem;
 import java.util.HashMap;
 
@@ -67,9 +67,9 @@ public class RobotContainer
         // ----------------------------------------------------------------------------------------
         
         // -- Vision
-        new Trigger(OI.Operator::getBackButton).onTrue(LimelightVision.SetPipelineCommand(0).ignoringDisable(true));
+        //new Trigger(OI.Operator::getBackButton).onTrue(LimelightVision.SetPipelineCommand(0).ignoringDisable(true));
         new Trigger(OI.Operator::getStartButton).onTrue(LimelightVision.SetPipelineCommand(1).ignoringDisable(true));
-        new Trigger(OI.Operator::getRightStickButton).onTrue(LimelightVision.SetPipelineCommand(2).ignoringDisable(true));
+        new Trigger(OI.Operator::getBackButton).onTrue(LimelightVision.SetPipelineCommand(4).ignoringDisable(true));
 
     }
 
