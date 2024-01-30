@@ -67,9 +67,9 @@ public class RobotContainer
         // ----------------------------------------------------------------------------------------
         
         // -- Vision
-        new Trigger(OI.Operator::getBackButton).onTrue(LimelightVision.SetPipelineCommand(0).ignoringDisable(true));
+        //new Trigger(OI.Operator::getBackButton).onTrue(LimelightVision.SetPipelineCommand(0).ignoringDisable(true));
         new Trigger(OI.Operator::getStartButton).onTrue(LimelightVision.SetPipelineCommand(1).ignoringDisable(true));
-        new Trigger(OI.Operator::getRightStickButton).onTrue(LimelightVision.SetPipelineCommand(2).ignoringDisable(true));
+        new Trigger(OI.Operator::getRightStickButton).onTrue(LimelightVision.SetPipelineCommand(4).ignoringDisable(true));
 
     }
 

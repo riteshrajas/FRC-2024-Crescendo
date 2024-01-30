@@ -30,6 +30,7 @@ shooter
         stop flywheel
     data
         at speed
+        get position of arm
 
 arm
     task
