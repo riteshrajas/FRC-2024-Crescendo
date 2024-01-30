@@ -112,9 +112,19 @@ public final class Constants {
 
         /********** Indexer Motor Power **********/
         public static final double Indexer_MOTOR_POWER = 1;
+    }
 
+    public class Arm
+    {
+        /********** CAN ID's **********/
+        public static final int ARM_MOTOR_ID = 99;
+    }
 
-
+    public class Shooter
+    {
+        /********** CAN ID's **********/
+        public static final int SHOOTER1_MOTOR_ID = 98;
+        public static final int SHOOTER2_MOTOR_ID = 97;
     }
 }
 
