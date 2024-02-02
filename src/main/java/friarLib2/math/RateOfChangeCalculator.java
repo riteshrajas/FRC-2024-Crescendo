@@ -10,7 +10,7 @@ public class RateOfChangeCalculator {
     private double previousTime = 0;
     private double latestTime = 0;
 
-    private Timer timer = new Timer();
+    private final Timer timer = new Timer();
 
     public RateOfChangeCalculator() {
         timer.reset();

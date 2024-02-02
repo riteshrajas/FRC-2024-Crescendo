@@ -2,8 +2,8 @@ package friarLib2.math;
 
 public class LinearRegression {
 
-    private double m; //slope
-    private double b; //y-intercept
+    private final double m; //slope
+    private final double b; //y-intercept
 
     /**
      * Compute m and b.

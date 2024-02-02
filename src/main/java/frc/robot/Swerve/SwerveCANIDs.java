@@ -6,11 +6,11 @@ package frc.robot.Swerve;
 public class SwerveCANIDs {
     public int driveMotorID;
     public int steeringMotorID;
-    public int CANCoderID;
+    public int CANcoderID;
 
-    public SwerveCANIDs (int driveMotorID, int steeringMotorID, int CANCoderID) {
+    public SwerveCANIDs (int driveMotorID, int steeringMotorID, int CANcoderID) {
         this.driveMotorID = driveMotorID;
         this.steeringMotorID = steeringMotorID;
-        this.CANCoderID = CANCoderID;
+        this.CANcoderID = CANcoderID;
     }
 }

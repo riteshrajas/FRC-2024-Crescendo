@@ -1,6 +1,6 @@
 package friarLib2.hardware;
 
-import com.ctre.phoenix.sensors.CANCoder;
+import com.ctre.phoenix6.hardware.CANcoder;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 
@@ -8,14 +8,14 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
  * An interface representing any swerve module
  */
 public interface SwerveModule {
-    public void setState (SwerveModuleState state);
-    public SwerveModuleState getState ();
-    public SwerveModulePosition getPosition ();
-    public CANCoder GetCanCoder();
+    void setState(SwerveModuleState state);
+    SwerveModuleState getState();
+    SwerveModulePosition getPosition();
+    CANcoder GetCanCoder();
 
-    default public void outputToDashboard () {}
+    default void outputToDashboard() {}
 
-    default public boolean steeringHasSlipped () { return false; }
-    default public void zeroSteering () {}
-    public void zeroPosition ();
+    default boolean steeringHasSlipped() { return false; }
+    default void zeroSteering(int encoderOffset) {}
+    void zeroPosition();
 }

@@ -8,11 +8,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class VisionTarget {
 
-    private double x; //X offset from crosshair (Yaw)
-    private double y; //Y offset from crosshair (Pitch)
-    private double area; //Area
-    private double skew; //Skew
-    private Transform2d pose; //Location of target relative to robot
+    private final double x; //X offset from crosshair (Yaw)
+    private final double y; //Y offset from crosshair (Pitch)
+    private final double area; //Area
+    private final double skew; //Skew
+    private final Transform2d pose; //Location of target relative to robot
 
     public VisionTarget () {
         x = 0;

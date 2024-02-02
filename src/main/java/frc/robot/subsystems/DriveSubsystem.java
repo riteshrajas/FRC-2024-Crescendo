@@ -1,9 +1,7 @@
 /*Shouldn't need major changes */
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.ErrorCode;
-import com.ctre.phoenix.sensors.AbsoluteSensorRange;
-import com.ctre.phoenix.sensors.CANCoder;
+import com.ctre.phoenix6.hardware.CANcoder;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -16,6 +14,7 @@ import frc.robot.OI;
 import frc.robot.Swerve.SwerveModule3309;
 import friarLib2.hardware.SwerveModule;
 
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static frc.robot.Constants.Drive.*;
@@ -28,6 +27,8 @@ public class DriveSubsystem extends SubsystemBase
         Forward,
         Reverse,
     }
+
+    public HashMap<CANcoder, Integer> canCoderOffsetMap;
     
     private final Field2d field = new Field2d();
 
@@ -84,13 +85,13 @@ public class DriveSubsystem extends SubsystemBase
     }
 
     /**
-     * Use the CANCoders to rezero each swerve module
+     * Use the CANcoders to rezero each swerve module
      */
     public void zeroModules () {
-        frontLeftModule.zeroSteering();
-        frontRightModule.zeroSteering();
-        backLeftModule.zeroSteering();
-        backRightModule.zeroSteering();
+        frontLeftModule.zeroSteering(canCoderOffsetMap.get(frontLeftModule.GetCanCoder()));
+        frontRightModule.zeroSteering(canCoderOffsetMap.get(frontRightModule.GetCanCoder()));
+        backLeftModule.zeroSteering(canCoderOffsetMap.get(backLeftModule.GetCanCoder()));
+        backRightModule.zeroSteering(canCoderOffsetMap.get(backRightModule.GetCanCoder()));
     }
 
     /**
@@ -223,16 +224,18 @@ public class DriveSubsystem extends SubsystemBase
     {
         return runOnce(() ->
         {
-            CANCoder[] canCoders = { frontLeftModule.GetCanCoder(), frontRightModule.GetCanCoder(), backLeftModule.GetCanCoder(), backRightModule.GetCanCoder() };
 
-            for (CANCoder canCoder : canCoders)
+            CANcoder[] canCoders = { frontLeftModule.GetCanCoder(), frontRightModule.GetCanCoder(), backLeftModule.GetCanCoder(), backRightModule.GetCanCoder() };
+
+            for (CANcoder canCoder : canCoders)
             {
                 int id = canCoder.getDeviceID();
 
-                canCoder.configAbsoluteSensorRange(AbsoluteSensorRange.Unsigned_0_to_360);
-                canCoder.configMagnetOffset(0);
+//                canCoder.configAbsoluteSensorRange(AbsoluteSensorRange.Unsigned_0_to_360);
+//                canCoder.configMagnetOffset(0);
+                // Doesn't appear in phoenix6, may or may not need
 
-                double absolutePosition = canCoder.getAbsolutePosition();
+                double absolutePosition = canCoder.getAbsolutePosition().getValue();
                 int canCoderSlotValue = (int) (absolutePosition * 100 + 0.5);
 
                 System.out.println(
@@ -241,10 +244,12 @@ public class DriveSubsystem extends SubsystemBase
                                 " (absolute position = " + absolutePosition + " degrees)"
                 );
 
-                ErrorCode e = canCoder.configSetCustomParam(canCoderSlotValue, 0);
-                if (e != ErrorCode.OK) {
-                    System.out.println("Error setting custom parameter on encoder " + id);
-                }
+                canCoderOffsetMap.put(canCoder, canCoderSlotValue);
+                // doesn't exist in phoenix6? We only use this to store values long term
+//                ErrorCode e = canCoder.configSetCustomParam(canCoderSlotValue, 0);
+//                if (e != ErrorCode.OK) {
+//                    System.out.println("Error setting custom parameter on encoder " + id);
+//                }
             }
         });
     }

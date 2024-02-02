@@ -3,8 +3,8 @@ package friarLib2.utility;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.ctre.phoenix.motorcontrol.can.BaseTalon;
 
+import com.ctre.phoenix6.hardware.core.CoreTalonFX;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class PIDParameters implements Sendable
 {
-    private int SlotIndex;
+    private final int SlotIndex;
 
     private double P;
     private double I;
@@ -22,7 +22,7 @@ public class PIDParameters implements Sendable
     private double F;
     private double IZone;
 
-    private final Set<BaseTalon> linkedMotors  = new HashSet<>();
+    private final Set<CoreTalonFX> linkedMotors  = new HashSet<>();
     
     public PIDParameters (int slotIdx, String sendableName, double p, double i, double d, double f, double iZone)
     {
@@ -46,14 +46,15 @@ public class PIDParameters implements Sendable
      *
      * @param motor motor to configure
      */
-    public void configureMotorPID (BaseTalon motor) {
+    public void configureMotorPID (CoreTalonFX motor) {
         linkedMotors.add(motor);
         updateMotorPID();
     }
 
     public void updateMotorPID ()
     {
-        for (BaseTalon linkedMotor : linkedMotors) {
+        for (CoreTalonFX linkedMotor : linkedMotors) {
+            linkedMotor.
             linkedMotor.config_kP(0, P);
             linkedMotor.config_kI(0, I);
             linkedMotor.config_kD(0, D);
