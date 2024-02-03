@@ -53,8 +53,8 @@ public class ShooterSubsystem {
         m_velocity.withSlot(0);
        return run(() ->
        {
-           ShooterMotor1.setControl(m_velocity.withVelocity(RPS));
-           ShooterMotor2.setControl(m_velocity.withVelocity(RPS));
+           ShooterMotor1.setControl(m_velocity.withVelocity(setRPS(RPS)));
+           ShooterMotor2.setControl(m_velocity.withVelocity(setRPS(RPS)));
        });
     }
 
