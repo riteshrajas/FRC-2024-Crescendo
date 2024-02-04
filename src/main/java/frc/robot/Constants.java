@@ -10,7 +10,7 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
-import frc.robot.Swerve.SwerveCANIDs;
+//import frc.robot.Swerve.SwerveCANIDs;
 import friarLib2.utility.PIDParameters;
 
 /**
@@ -42,12 +42,12 @@ public final class Constants {
     */
     public static class Drive {
         /********** CAN ID's **********/
-        public static final SwerveCANIDs FRONT_LEFT_MODULE_IDS = new SwerveCANIDs(32, 36, 61);
-        public static final SwerveCANIDs FRONT_RIGHT_MODULE_IDS = new SwerveCANIDs(33, 37, 62);
-        public static final SwerveCANIDs BACK_LEFT_MODULE_IDS = new SwerveCANIDs(34, 39, 60);
-        public static final SwerveCANIDs BACK_RIGHT_MODULE_IDS = new SwerveCANIDs(40, 41, 59);
-        
-        /********** Module Translations **********/
+//        public static final SwerveCANIDs FRONT_LEFT_MODULE_IDS = new SwerveCANIDs(32, 36, 61);
+//        public static final SwerveCANIDs FRONT_RIGHT_MODULE_IDS = new SwerveCANIDs(33, 37, 62);
+//        public static final SwerveCANIDs BACK_LEFT_MODULE_IDS = new SwerveCANIDs(34, 39, 60);
+//        public static final SwerveCANIDs BACK_RIGHT_MODULE_IDS = new SwerveCANIDs(2, 41, 59);
+//
+//        /********** Module Translations **********/
         public static final Translation2d FRONT_LEFT_MODULE_TRANSLATION = new Translation2d(0.34671, 0.23241);
         public static final Translation2d FRONT_RIGHT_MODULE_TRANSLATION = new Translation2d(0.34671, -0.23241);
         public static final Translation2d BACK_LEFT_MODULE_TRANSLATION = new Translation2d(-0.34671, 0.23241);
