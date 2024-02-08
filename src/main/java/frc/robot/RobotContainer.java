@@ -8,6 +8,7 @@ package frc.robot;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -20,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 //import frc.robot.Commands.TurnInDirectionOfTarget;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.ArmSubsystem;
 
 import java.util.HashMap;
 
@@ -32,41 +34,50 @@ import java.util.HashMap;
  */
 public class RobotContainer
 {
-    private double MaxSpeed = 0.5; // 6 meters per second desired top speed
+    // -- Controllers
+    public static CommandXboxController Driver = new CommandXboxController(0);
+    public static CommandXboxController Operator = new CommandXboxController(1);
+
+    private double MaxSpeed = 2.11; // 6 meters per second desired top speed
     private double MaxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
 
     /* Setting up bindings for necessary control of the swerve drive platform */
-    private final CommandXboxController joystick = new CommandXboxController(0); // My joystick
-    private final CommandSwerveDrivetrain drivetrain = TunerConstants.DriveTrain; // My drivetrain
+    public final CommandSwerveDrivetrain drivetrain = TunerConstants.DriveTrain; // My drivetrain
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-            .withDeadband(MaxSpeed * 0.4).withRotationalDeadband(MaxAngularRate * 0.5) // Add a 10% deadband
+            .withDeadband(MaxSpeed * 0.2).withRotationalDeadband(MaxAngularRate * 0.2) // Add a 10% deadband
             .withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage); // I want field-centric
     // driving in open loop
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
+    private final SwerveRequest.RobotCentric forwardStraight = new SwerveRequest.RobotCentric().withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage);
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     // -- Subsystems 
-
+    private final ArmSubsystem Arm = new ArmSubsystem();
 
     // -- Auto
     // private SwerveAutoBuilder AutoBuilder = null;
-    private final SendableChooser<Command> AutoChooser = new SendableChooser<>();
+//    private final SendableChooser<Command> AutoChooser = new SendableChooser<>();
+    private final SendableChooser<Command> autoChooser;
 
 
     public RobotContainer()
     {
+        autoChooser = AutoBuilder.buildAutoChooser();
         ConfigureBindings();
         SetDefaultCommands();
         // ConfigureSwerveAutoBuilder();
         // ConfigureAutoCommands();
+        SmartDashboard.putData("Auto Chooser", autoChooser);
+
+
     }
 
 
     public Command GetAutonomousCommand()
     {
-        return AutoChooser.getSelected();
+        return autoChooser.getSelected();
     }
 
 
@@ -88,11 +99,16 @@ public class RobotContainer
         // ----------------------------------------------------------------------------------------
         // -- Operator
         // ----------------------------------------------------------------------------------------
-        
+        // -- Arm
+        Operator.a().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed));
+        Operator.b().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_podium));
+        Operator.x().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_wing));
+        Operator.y().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos));
+
         // -- Vision
-        //new Trigger(OI.Operator::getBackButton).onTrue(LimelightVision.SetPipelineCommand(0).ignoringDisable(true));
-        new Trigger(OI.Operator::getStartButton).onTrue(LimelightVision.SetPipelineCommand(1).ignoringDisable(true));
-        new Trigger(OI.Operator::getRightStickButton).onTrue(LimelightVision.SetPipelineCommand(2).ignoringDisable(true));
+        // Operator.back().onTrue(LimelightVision.SetPipelineCommand(0).ignoringDisable(true));
+        Operator.start().onTrue(LimelightVision.SetPipelineCommand(1).ignoringDisable(true));
+        Operator.rightStick().onTrue(LimelightVision.SetPipelineCommand(2).ignoringDisable(true));
 
     }
 
@@ -100,60 +116,38 @@ public class RobotContainer
     private void SetDefaultCommands()
     {
         drivetrain.setDefaultCommand( // Drivetrain will execute this command periodically
-                drivetrain.applyRequest(() -> drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with
+                drivetrain.applyRequest(() -> drive.withVelocityX(-Driver.getLeftY() * MaxSpeed) // Drive forward with
                         // negative Y (forward)
-                        .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                        .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-                ));
+                        .withVelocityY(-Driver.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                        .withRotationalRate(-Driver.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+                ).ignoringDisable(true));
 
-        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        joystick.b().whileTrue(drivetrain
-                .applyRequest(() -> point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))));
+        Driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
+        Driver.b().whileTrue(drivetrain
+                .applyRequest(() -> point.withModuleDirection(new Rotation2d(-Driver.getLeftY(), -Driver.getLeftX()))));
 
         // reset the field-centric heading on left bumper press
-        joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
+        Driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
 
         if (Utils.isSimulation()) {
             drivetrain.seedFieldRelative(new Pose2d(new Translation2d(), Rotation2d.fromDegrees(90)));
         }
         drivetrain.registerTelemetry(logger::telemeterize);
+        Driver.pov(0).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0.5).withVelocityY(0)));
+//        Driver.pov(45).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0.5).withVelocityY(0.5)));
+//        Driver.pov(90).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0).withVelocityY(0.5)));
+//        Driver.pov(135).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(0.5)));
+        Driver.pov(180).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(0)));
+//        Driver.pov(225).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(-0.5)));
+//        Driver.pov(270).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0).withVelocityY(-0.5)));
+//        Driver.pov(315).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0.5).withVelocityY(-0.5)));
     }
 
+    private void ConfigureAutos()
+    {
+        autoChooser.addOption("mid", drivetrain.getAutoPath("3 note middle") );
+    }
 
-    // private void ConfigureSwerveAutoBuilder()
-    // {
-    //     // -- Map Path Planner events to Commands
-    //     HashMap<String, Command> eventMap = new HashMap<>();
-
-    //     // eventMap.put("BalanceForward", _Drive.Command_AutoBalance(DriveSubsystem.Direction.Forward));
-    //     // eventMap.put("BalanceBackward", _Drive.Command_AutoBalance(DriveSubsystem.Direction.Reverse));
-
-    //     eventMap.put("Wait", new WaitCommand(1));
-
-    //     // -- Builder
-    //     AutoBuilder = new SwerveAutoBuilder(
-    //             _Drive::GetPose, // Pose2d supplier
-    //             _Drive::HardResetOdometry, // Pose2d consumer, used to reset odometry at the beginning of auto
-    //             _Drive.GetKinematics(), // SwerveDriveKinematics
-    //             Constants.Drive.HOLONOMIC_CONTROLLER_PID_XY_CONSTRAINTS, // PID constants to correct for translation error (used to create the X and Y PID controllers)
-    //             Constants.Drive.HOLONOMIC_CONTROLLER_PID_ROTATIONAL_CONSTRAINTS, // PID constants to correct for rotation error (used to create the rotation controller)
-    //             _Drive::setModuleStates, // Module states consumer used to output to the drive subsystem
-    //             eventMap,
-    //             true, // Should the path be automatically mirrored depending on alliance color. Optional, defaults to true
-    //         _Drive // The drive subsystem. Used to properly set the requirements of path following commands
-    //     );
-    // }
-
-    // private Command GetPathPlannerAutoCommand(String name)
-    // {
-    //     return AutoBuilder.fullAuto(PathPlanner.loadPathGroup(name, new PathConstraints(1, .5)));
-    // }
-
-    // private void ConfigureAutoCommands()
-    // {
-    //     AutoChooser.setDefaultOption("No auto", new WaitUntilCommand(0));
-    //     SmartDashboard.putData(AutoChooser);
-    // }
 
 }
 

@@ -29,7 +29,9 @@ public class Robot extends TimedRobot
         // autonomous chooser on the dashboard.
         m_robotContainer = new RobotContainer();
 
-        CameraServer.startAutomaticCapture();
+//        CameraServer.startAutomaticCapture();
+
+        m_robotContainer.drivetrain.getDaqThread().setThreadPriority(99);
 
     }
 
@@ -49,8 +51,6 @@ public class Robot extends TimedRobot
         // block in order for anything in the Command-based framework to work.
         CommandScheduler.getInstance().run();
 
-        SmartDashboard.putNumber("Air Storage Pressure", Pneumatics.getStoragePSI());
-        SmartDashboard.putBoolean("Compressor State", Pneumatics.getCompressorState());
         SmartDashboard.putNumber("distance estimator", LimelightVision.getInchesFromTarget());
         
 

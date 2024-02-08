@@ -117,7 +117,8 @@ public final class Constants {
     public class Arm
     {
         /********** CAN ID's **********/
-        public static final int ARM_MOTOR_ID = 99;
+        public static final int ARM_MOTOR_LEFT = 15;
+        public static final int ARM_MOTOR_RIGHT = 16;
     }
 
     public class Shooter
