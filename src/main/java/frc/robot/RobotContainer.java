@@ -100,10 +100,15 @@ public class RobotContainer
         // -- Operator
         // ----------------------------------------------------------------------------------------
         // -- Arm
-        Operator.a().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed));
-        Operator.b().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_podium));
-        Operator.x().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_wing));
-        Operator.y().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos));
+//        Operator.a().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed));
+//        Operator.b().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_podium));
+//        Operator.y().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_wing));
+//        Operator.x().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos));
+        Operator.a().onTrue(new InstantCommand(() -> Arm.setTargetPosition(ArmSubsystem.EArmPosition.stowed)));
+        Operator.b().onTrue(new InstantCommand(() -> Arm.setTargetPosition(ArmSubsystem.EArmPosition.shoot_podium)));
+        Operator.y().onTrue(new InstantCommand(() -> Arm.setTargetPosition(ArmSubsystem.EArmPosition.shoot_wing)));
+        Operator.x().onTrue(new InstantCommand(() -> Arm.setTargetPosition(ArmSubsystem.EArmPosition.climb_firstpos)));
+
 
         // -- Vision
         // Operator.back().onTrue(LimelightVision.SetPipelineCommand(0).ignoringDisable(true));
@@ -134,13 +139,11 @@ public class RobotContainer
         }
         drivetrain.registerTelemetry(logger::telemeterize);
         Driver.pov(0).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0.5).withVelocityY(0)));
-//        Driver.pov(45).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0.5).withVelocityY(0.5)));
-//        Driver.pov(90).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0).withVelocityY(0.5)));
-//        Driver.pov(135).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(0.5)));
+
         Driver.pov(180).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(0)));
-//        Driver.pov(225).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(-0.5)));
-//        Driver.pov(270).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0).withVelocityY(-0.5)));
-//        Driver.pov(315).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0.5).withVelocityY(-0.5)));
+
+        Arm.setDefaultCommand(new RunCommand(Arm::runAutomatic, Arm));
+
     }
 
     private void ConfigureAutos()

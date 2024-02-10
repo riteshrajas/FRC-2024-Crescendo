@@ -117,8 +117,14 @@ public final class Constants {
     public class Arm
     {
         /********** CAN ID's **********/
-        public static final int ARM_MOTOR_LEFT = 15;
+        public static final int ARM_MOTOR_LEFT = 23;
         public static final int ARM_MOTOR_RIGHT = 16;
+
+        public static final TrapezoidProfile.Constraints kArmMotionConstraint =
+                new TrapezoidProfile.Constraints(1.0, 2.0);
+
+        public static final double kArmZeroCosineOffset =
+                1.342;
     }
 
     public class Shooter
