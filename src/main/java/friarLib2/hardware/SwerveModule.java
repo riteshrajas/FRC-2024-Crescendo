@@ -11,6 +11,7 @@ public interface SwerveModule {
     public void setState (SwerveModuleState state);
     public SwerveModuleState getState ();
     public SwerveModulePosition getPosition ();
+
     public CANCoder GetCanCoder();
 
     default public void outputToDashboard () {}
