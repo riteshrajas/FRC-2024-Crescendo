@@ -1,9 +1,17 @@
 package frc.robot.subsystems;
 
-import com.revrobotics.*;
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.DemandType;
+import com.ctre.phoenix.motorcontrol.IFollower;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.StrictFollower;
+import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -17,10 +25,11 @@ import static edu.wpi.first.math.util.Units.radiansToRotations;
 
 public class ArmSubsystem extends SubsystemBase {
     public enum EArmPosition {
-        stowed(0), // A
-        shoot_podium(1),  // B
-        shoot_wing(2),  // X
-        climb_firstpos(10),  // Y
+        stowed(0),
+        shoot_subwoofer(1),
+        shoot_podium(0), //TODO: tune when added
+        shoot_wing(2), //TODO: tune when added
+        climb_firstpos(10),
         climb_secondpos(0),
         amp(0),
         trap(0);
@@ -32,143 +41,71 @@ public class ArmSubsystem extends SubsystemBase {
         }
     }
 
-    private CANSparkFlex ArmMotorLeft;
-    private CANSparkFlex ArmMotorRight;
-
-    private SparkPIDController ArmPID;
-    private RelativeEncoder ArmInternalEncoder;
-    private RelativeEncoder ArmExternalEncoder; // Through Bore Encoder
-    private double setpoint;
-
-    private TrapezoidProfile profile;
-    private Timer timer;
-    private TrapezoidProfile.State startState;
-    private TrapezoidProfile.State endState;
-    private TrapezoidProfile.State targetState;
-    private double feedforward;
-    private double manualValue;
-
-
-
-    private final double FF = 0.2;
-
+    private TalonFX LeftArmMotor = new TalonFX(Constants.Arm.ARM_MOTOR_LEFT);
+    private TalonFX RightArmMotor = new TalonFX(Constants.Arm.ARM_MOTOR_RIGHT);
+    private final MotionMagicVoltage MotionMagic = new MotionMagicVoltage(0);
 
     public ArmSubsystem() {
-        ArmMotorLeft = CreateMotor(Constants.Arm.ARM_MOTOR_LEFT);
-        ArmMotorRight = CreateMotor(Constants.Arm.ARM_MOTOR_RIGHT);
-        ArmMotorRight.follow(ArmMotorLeft);
-
-        ArmPID = CreatePID(ArmMotorLeft);
-//        ArmInternalEncoder = ArmMotorLeft.getEncoder();
-        ArmExternalEncoder = ArmMotorLeft.getExternalEncoder(8192);
-        ArmInternalEncoder = ArmMotorLeft.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
-//        ArmInternalEncoder.setPositionConversionFactor();
-//        ArmInternalEncoder.setVelocityConversionFactor();
-        ArmInternalEncoder.setPosition(0.0);
-
-        ArmMotorLeft.burnFlash();
-        ArmMotorRight.burnFlash();
-
-        setpoint = EArmPosition.stowed.Rotations;
-
-        timer = new Timer();
-        timer.start();
-
-        updateMotionprofile();
-
-
-
-
-        // Uncomment this out when we have the Through Bore Encoder connected (and redo positions)
-        // Also switch any other uses of ArmInternalEncoder to ArmExternalEncoder
-        // ArmPID.setFeedbackDevice(ArmExternalEncoder);
-    }
-    private void updateMotionprofile()
-    {
-        startState = new TrapezoidProfile.State(ArmInternalEncoder.getPosition(), ArmInternalEncoder.getVelocity());
-        endState = new TrapezoidProfile.State(setpoint, 0.0);
-        profile = new TrapezoidProfile(Constants.Arm.kArmMotionConstraint);
-        timer.reset();
-    }
-    public void setTargetPosition(EArmPosition _setpoint)
-    {
-        if (_setpoint.Rotations != setpoint)
-        {
-            setpoint = _setpoint.Rotations;
-            updateMotionprofile();
-        }
-    }
-
-    public void runAutomatic()
-    {
-        double elaspedTime = timer.get();
-        if (profile.isFinished(elaspedTime)) {
-            targetState = new TrapezoidProfile.State(setpoint, 0.0);
-        }
-        else
-        {
-            targetState = profile.calculate(elaspedTime, startState, endState);
-        }
-
-        feedforward = GravityFF();
-        ArmPID.setReference(targetState.position, CANSparkBase.ControlType.kPosition, 0, feedforward);
+        ConfigureMotors(LeftArmMotor, 0, 0, 0, 0);
+        ConfigureMotors(RightArmMotor, 0, 0, 0, 0);
+        RightArmMotor.setControl(new Follower(23, false));
+        MotionMagic.Slot = 0;
 
     }
 
-    private CANSparkFlex CreateMotor(int motorId) {
-        CANSparkFlex motor = new CANSparkFlex(motorId, CANSparkLowLevel.MotorType.kBrushless);
+    private void ConfigureMotors(TalonFX motor, double kV, double kP, double kI, double kD) {
 
-        motor.restoreFactoryDefaults();
-        motor.setIdleMode(CANSparkBase.IdleMode.kBrake);
+        var talonFXConfigs = new TalonFXConfiguration();
 
-        return motor;
+        var slot0Configs = talonFXConfigs.Slot0;
+        slot0Configs.kS = caclulateGravityFeedForward();
+        slot0Configs.kV = kV;
+        slot0Configs.kP = kP;
+        slot0Configs.kI = kI;
+        slot0Configs.kD = kD;
+
+        var motionMagicConfigs = talonFXConfigs.MotionMagic;
+        motionMagicConfigs.MotionMagicCruiseVelocity = 80; // 80 rps cruise velocity
+        motionMagicConfigs.MotionMagicAcceleration = 160; // 160 rps/s acceleration (0.5 seconds)
+        motionMagicConfigs.MotionMagicJerk = 1600; // 1600 rps/s^2 jerk (0.1 seconds)
+
+        // apply gains, 50 ms total timeout
+        motor.getConfigurator().apply(slot0Configs, 0.050);
     }
 
-    private SparkPIDController CreatePID(CANSparkFlex motor) {
-        var pid = motor.getPIDController();
+    private double caclulateGravityFeedForward() {
+        double maxGravityFF = 0; //TODO: tune me
+        double ticksper360 = 12000;
 
-        pid.setP(0.1);
-        pid.setI(0);
-        pid.setD(0);
-        pid.setIZone(0);
-        pid.setFF(0);
-        pid.setOutputRange(-0.05, 0.05);
+        double CurrentPosition = LeftArmMotor.getPosition().getValue();
+//        var currentPositionLatency = rotorPosSignal.getTimestamp().getLatency();
+        double AccurateCurrentPosition = CurrentPosition + LeftArmMotor.getClosedLoopError().getValue();
+        double tickerPerDegree = ticksper360 / 360;
+        double degrees = (AccurateCurrentPosition - (ticksper360 / 4)) / tickerPerDegree;
+        double radians = Math.toRadians(degrees);
+        double cosScalar = Math.cos(radians);
 
-        pid.setSmartMotionMaxVelocity(2, 0);
-        pid.setSmartMotionMaxAccel(1, 0);
-        pid.setSmartMotionMinOutputVelocity(0, 0);
-        pid.setSmartMotionAllowedClosedLoopError(0.0021, 0);
-
-
-        return pid;
+        return maxGravityFF * cosScalar;
     }
 
-
-    private double GravityFF()
-    {
-        double cosScalar = FF * Math.cos(ArmInternalEncoder.getPosition());
-        double gFF = FF * cosScalar;
-        return gFF;
-    }
-
-    public Command Command_SetPosition(EArmPosition position)
-    {
-//        return runOnce(() -> ArmPID.setReference(position.Rotations, CANSparkBase.ControlType.kPosition, 0, 0, SparkPIDController.ArbFFUnits.kPercentOut));
+    public Command Command_SetPosition(EArmPosition position) {
         return run(() ->
-            {
-                SmartDashboard.putNumber("Arm Target", position.Rotations);
+        {
+            SmartDashboard.putNumber("Arm Target", position.Rotations);
 
-                //ArmPID.setReference(position.Rotations, CANSparkBase.ControlType.kSmartMotion, 0, 0, SparkPIDController.ArbFFUnits.kPercentOut);
-                ArmPID.setReference(position.Rotations, CANSparkBase.ControlType.kPosition, 0, 0, SparkPIDController.ArbFFUnits.kPercentOut);
-            })
-            .until(() ->
-            {
-//                double actualRotation = ArmInternalEncoder.getPosition();
-//                SmartDashboard.putNumber("Arm Rotation", actualRotation);
-                return MathUtil.isNear(position.Rotations, ArmInternalEncoder.getPosition(), 0.1);
-//                return Math.abs(actualRotation - position.Rotations) < 0.10; // TODO: Tune this error threshold
-            });
+            LeftArmMotor.setControl(MotionMagic.withPosition(position.Rotations));
+        })
+                .until(() ->
+                {
+                    double actualRotation = LeftArmMotor.getPosition().getValue();
+                    SmartDashboard.putNumber("Arm Rotation", actualRotation);
+                    return Math.abs(actualRotation - position.Rotations) < 0.10; // TODO: Tune this error threshold
+                });
     }
 
-    
+
+    @Override
+    public void periodic() {
+        SmartDashboard.putNumber("Arm Position", LeftArmMotor.getPosition().getValue());
+    }
 }

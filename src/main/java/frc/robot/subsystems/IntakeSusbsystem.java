@@ -31,7 +31,7 @@ import javax.naming.ldap.Control;
 public class IntakeSusbsystem extends SubsystemBase {
     public enum EPivotPosition {
         stowed(0), // A
-        shoot_podium(1),  // B
+        shoot_speaker(1),  // B
         intake(0),
         amp(0),
         trap(0);

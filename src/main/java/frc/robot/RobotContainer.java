@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 //import frc.robot.Commands.TurnInDirectionOfTarget;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.IntakeSusbsystem;
 
 import java.util.HashMap;
 
@@ -55,6 +56,7 @@ public class RobotContainer
 
     // -- Subsystems 
     private final ArmSubsystem Arm = new ArmSubsystem();
+    private final IntakeSusbsystem Intake = new IntakeSusbsystem();
 
     // -- Auto
     // private SwerveAutoBuilder AutoBuilder = null;
@@ -104,10 +106,7 @@ public class RobotContainer
 //        Operator.b().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_podium));
 //        Operator.y().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_wing));
 //        Operator.x().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos));
-        Operator.a().onTrue(new InstantCommand(() -> Arm.setTargetPosition(ArmSubsystem.EArmPosition.stowed)));
-        Operator.b().onTrue(new InstantCommand(() -> Arm.setTargetPosition(ArmSubsystem.EArmPosition.shoot_podium)));
-        Operator.y().onTrue(new InstantCommand(() -> Arm.setTargetPosition(ArmSubsystem.EArmPosition.shoot_wing)));
-        Operator.x().onTrue(new InstantCommand(() -> Arm.setTargetPosition(ArmSubsystem.EArmPosition.climb_firstpos)));
+       Operator.a().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer), Intake.Command_SetIntakePosition(IntakeSusbsystem.EPivotPosition.shoot_speaker)));
 
 
         // -- Vision
@@ -141,8 +140,8 @@ public class RobotContainer
         Driver.pov(0).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0.5).withVelocityY(0)));
 
         Driver.pov(180).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(0)));
-
-        Arm.setDefaultCommand(new RunCommand(Arm::runAutomatic, Arm));
+        Driver.povRight().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0).withVelocityY(-0.5)));
+        Driver.povLeft().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0).withVelocityY(0.5)));
 
     }
 
