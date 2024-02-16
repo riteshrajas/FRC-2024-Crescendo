@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 //import frc.robot.Commands.TurnInDirectionOfTarget;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.IntakeSusbsystem;
 
 
@@ -40,7 +41,7 @@ public class RobotContainer
     private double MaxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
 
     /* Setting up bindings for necessary control of the swerve drive platform */
-    public final CommandSwerveDrivetrain drivetrain = TunerConstants.DriveTrain; // My drivetrain
+    public final SwerveSubsystem drivetrain = TunerConstants.DriveTrain; // My drivetrain
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.2).withRotationalDeadband(MaxAngularRate * 0.2) // Add a 10% deadband
@@ -91,7 +92,7 @@ public class RobotContainer
 
         // -- Auto Turn
 
-
+        
 
 
 
@@ -171,6 +172,17 @@ public class RobotContainer
         Driver.povRight().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0).withVelocityY(-0.5)));
         Driver.povLeft().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0).withVelocityY(0.5)));
         Driver.leftBumper().whileTrue(drivetrain.applyRequest(() -> AimRobot.withRotationalRate(LimelightVision.shooterCamera.getBestTarget().getX()))); // TODO: I don't know if this will work (if the robot has no target does it return 0?)
+        Driver.leftTrigger().whileTrue(drivetrain.applyRequest(() -> {
+            if (LimelightVision.shooterCamera.getBestTarget().getX() > 0.1) {
+                return AimRobot.withRotationalRate(LimelightVision.shooterCamera.getBestTarget().getX() * -1);
+            } else if (LimelightVision.getInchesFromTarget() > 5) {
+                return forwardStraight.withVelocityX(0).withVelocityY(0.5);
+            } else {
+                return forwardStraight.withVelocityX(0).withVelocityY(0);
+            }
+        }));
+        
+        
 
 
 //            Driver.leftBumper().whileTrue(drivetrain.applyRequest(() -> AimRobot.withRotationalRate(LimelightVision.shooterCamera.getBestTarget().getX()));
