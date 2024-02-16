@@ -1,27 +1,13 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.DemandType;
-import com.ctre.phoenix.motorcontrol.IFollower;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.hardware.TalonFX;
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import edu.wpi.first.wpilibj.Timer;
-
-import javax.swing.*;
-import java.util.Objects;
-
-import static edu.wpi.first.math.util.Units.radiansToRotations;
 
 public class ArmSubsystem extends SubsystemBase {
     public enum EArmPosition {
@@ -34,10 +20,10 @@ public class ArmSubsystem extends SubsystemBase {
         amp(0),
         trap(0);
 
-        private final int Rotations;
+        private final int EncoderCount;
 
-        EArmPosition(int rotations) {
-            Rotations = rotations;
+        EArmPosition(int encoderCount) {
+            EncoderCount = encoderCount;
         }
     }
 
@@ -48,7 +34,7 @@ public class ArmSubsystem extends SubsystemBase {
     public ArmSubsystem() {
         ConfigureMotors(LeftArmMotor, 0, 0, 0, 0);
         ConfigureMotors(RightArmMotor, 0, 0, 0, 0);
-        RightArmMotor.setControl(new Follower(23, false));
+        RightArmMotor.setControl(new Follower(Constants.Arm.ARM_MOTOR_LEFT, false));
         MotionMagic.Slot = 0;
 
     }
@@ -58,7 +44,7 @@ public class ArmSubsystem extends SubsystemBase {
         var talonFXConfigs = new TalonFXConfiguration();
 
         var slot0Configs = talonFXConfigs.Slot0;
-        slot0Configs.kS = caclulateGravityFeedForward();
+        slot0Configs.kS = 0; //GFF
         slot0Configs.kV = kV;
         slot0Configs.kP = kP;
         slot0Configs.kI = kI;
@@ -71,9 +57,11 @@ public class ArmSubsystem extends SubsystemBase {
 
         // apply gains, 50 ms total timeout
         motor.getConfigurator().apply(slot0Configs, 0.050);
+        motor.setPosition(0);
     }
 
-    private double caclulateGravityFeedForward() {
+    private double caclulateGravityFeedForward()
+    {
         double maxGravityFF = 0; //TODO: tune me
         double ticksper360 = 12000;
 
@@ -91,16 +79,21 @@ public class ArmSubsystem extends SubsystemBase {
     public Command Command_SetPosition(EArmPosition position) {
         return run(() ->
         {
-            SmartDashboard.putNumber("Arm Target", position.Rotations);
+            SmartDashboard.putNumber("Arm Target", position.EncoderCount);
 
-            LeftArmMotor.setControl(MotionMagic.withPosition(position.Rotations));
+            LeftArmMotor.setControl(MotionMagic.withPosition(position.EncoderCount));
         })
                 .until(() ->
                 {
                     double actualRotation = LeftArmMotor.getPosition().getValue();
                     SmartDashboard.putNumber("Arm Rotation", actualRotation);
-                    return Math.abs(actualRotation - position.Rotations) < 0.10; // TODO: Tune this error threshold
+                    return Math.abs(actualRotation - position.EncoderCount) < 0.10; // TODO: Tune this error threshold
                 });
+    }
+
+    public Command zeroArmEncoder()
+    {
+       return runOnce(() -> LeftArmMotor.setPosition(0));
     }
 
 

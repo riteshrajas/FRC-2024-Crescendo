@@ -91,9 +91,6 @@ public final class Constants {
         /********** Trap Scoring **********/
         public static final double INTAKE_MOTOR_TRAP_POWER = 1;
 
-        /********** pivot **********/
-        public static final double PIVOT_MOTOR_POWER = 1;
-
         /******** Misc ********/
         public static final double TargetThreshold = 10;
 

@@ -1,29 +1,14 @@
 package frc.robot.subsystems;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.ControlModeValue;
 
-import com.revrobotics.CANSparkFlex;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkPIDController;
-import edu.wpi.first.util.WPICleaner;
+import com.revrobotics.*;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.Constants;
-import friarLib2.utility.PIDParameters;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix6.configs.*;
-import com.ctre.phoenix6.controls.compound.*;
-import com.ctre.phoenix6.configs.jni.ConfigJNI;
-
-import javax.naming.ldap.Control;
 //*TODO: Find acutal poses, work out motor configurations, do commmands  and logic for moving pivot
 
 
@@ -43,15 +28,33 @@ public class IntakeSusbsystem extends SubsystemBase {
         }
     }
 
+    public enum EOutakeType
+    {
+        amp(0),
+        speaker(0),
+        trap(0);
+
+        private final int RPM;
+
+        EOutakeType(int rpm){ RPM = rpm; }
+    }
+
     private TalonFX PivotMotor = new TalonFX(Constants.Intake.PIVOT_MOTOR_ID);
-    private TalonFX IntakeMotor = new TalonFX(Constants.Intake.INTAKE_MOTOR_ID);
+
+    private SparkPIDController IntakePID;
+    private CANSparkFlex IntakeMotor;
+    private RelativeEncoder IntakeEncoder;
+//    private TalonFX IntakeMotor = new TalonFX(Constants.Intake.INTAKE_MOTOR_ID);
+
     private final MotionMagicVoltage MotionMagic = new MotionMagicVoltage(0);
 
-    private final VelocityDutyCycle Velocity = new VelocityDutyCycle(0);
+//    private final VelocityDutyCycle Velocity = new VelocityDutyCycle(0);
 
     public IntakeSusbsystem() {
         ConfigureMotors(PivotMotor, 0, 0, 0, 0);
-        ConfigureMotors(IntakeMotor, 0, 0, 0, 0);
+        IntakeMotor = CreateSparkMotor(Constants.Intake.INTAKE_MOTOR_ID);
+        IntakePID = CreatePID(IntakeMotor);
+//        ConfigureMotors(IntakeMotor, 0, 0, 0, 0);
         MotionMagic.Slot = 1;
 
     }
@@ -74,6 +77,33 @@ public class IntakeSusbsystem extends SubsystemBase {
 
         // apply gains, 50 ms total timeout
         motor.getConfigurator().apply(slot1Configs, 0.050);
+        motor.setPosition(0);
+    }
+    private CANSparkFlex CreateSparkMotor(int motorId) {
+        CANSparkFlex motor = new CANSparkFlex(motorId, CANSparkLowLevel.MotorType.kBrushless);
+
+        motor.restoreFactoryDefaults();
+        motor.setIdleMode(CANSparkBase.IdleMode.kBrake);
+
+        return motor;
+    }
+    private SparkPIDController CreatePID(CANSparkFlex motor) {
+        var pid = motor.getPIDController();
+
+        pid.setP(0.1);
+        pid.setI(0);
+        pid.setD(0);
+        pid.setIZone(0);
+        pid.setFF(0);
+        pid.setOutputRange(-1, 1);
+
+        pid.setSmartMotionMaxVelocity(1000, 0);
+        pid.setSmartMotionMaxAccel(500, 0);
+        pid.setSmartMotionMinOutputVelocity(0, 0);
+        pid.setSmartMotionAllowedClosedLoopError(0.0021, 0);
+
+
+        return pid;
     }
 
     private double caclulateGravityFeedForward() {
@@ -91,7 +121,7 @@ public class IntakeSusbsystem extends SubsystemBase {
         return maxGravityFF * cosScalar;
     }
 
-    public Command Command_SetIntakePosition(IntakeSusbsystem.EPivotPosition position) {
+    public Command Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition position) {
         return run(() ->
         {
             SmartDashboard.putNumber("Arm Target", position.Rotations);
@@ -106,18 +136,36 @@ public class IntakeSusbsystem extends SubsystemBase {
                 });
     }
 
-    public Command Command_setIntakePower(double velocity)
+    public Command Command_IntakeNote()
     {
-        return run(() ->
-        {
-            IntakeMotor.setControl(Velocity.withVelocity(velocity));
-        })
+        return
+            startEnd(
+                () -> { IntakePID.setReference(1, CANSparkBase.ControlType.kSmartVelocity, 0); },
+                () -> { IntakePID.setReference(0, CANSparkBase.ControlType.kSmartVelocity, 0); }
+            )
             .until(() ->
             {
-                return getCurrentCommand().isFinished();
+                //TODO: check for limit switch
+                return false;
             });
-
     }
+
+    public Command Command_OuttakeNote(EOutakeType outakeType)
+    {
+        return
+            startEnd(
+                () -> { IntakePID.setReference(outakeType.RPM, CANSparkBase.ControlType.kSmartVelocity, 0); },
+                () -> { IntakePID.setReference(0, CANSparkBase.ControlType.kSmartVelocity, 0); }
+            );
+    }
+
+
+
+    public Command zeroPivotEncoder()
+    {
+        return runOnce(() -> PivotMotor.setPosition(0));
+    }
+
     public void periodic() {
         SmartDashboard.putNumber("Arm Position", PivotMotor.getPosition().getValue());
     }

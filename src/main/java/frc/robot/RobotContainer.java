@@ -12,19 +12,15 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 //import frc.robot.Commands.TurnInDirectionOfTarget;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.IntakeSusbsystem;
-
-import java.util.HashMap;
 
 
 /**
@@ -39,6 +35,7 @@ public class RobotContainer
     public static CommandXboxController Driver = new CommandXboxController(0);
     public static CommandXboxController Operator = new CommandXboxController(1);
 
+
     private double MaxSpeed = 2.11; // 6 meters per second desired top speed
     private double MaxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
 
@@ -51,6 +48,7 @@ public class RobotContainer
     // driving in open loop
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.RobotCentric forwardStraight = new SwerveRequest.RobotCentric().withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage);
+    public final SwerveRequest.RobotCentric AimRobot = new SwerveRequest.RobotCentric().withSteerRequestType(SwerveModule.SteerRequestType.MotionMagicExpo);
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
@@ -77,6 +75,7 @@ public class RobotContainer
     }
 
 
+
     public Command GetAutonomousCommand()
     {
         return autoChooser.getSelected();
@@ -91,6 +90,11 @@ public class RobotContainer
 
 
         // -- Auto Turn
+
+
+
+
+
 //        new Trigger(OI.DriverLeft::getTrigger).whileTrue(new TurnInDirectionOfTarget(_Drive));
 
         // Zero IMU
@@ -102,17 +106,38 @@ public class RobotContainer
         // -- Operator
         // ----------------------------------------------------------------------------------------
         // -- Arm
-//        Operator.a().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed));
-//        Operator.b().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_podium));
-//        Operator.y().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_wing));
-//        Operator.x().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos));
-       Operator.a().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer), Intake.Command_SetIntakePosition(IntakeSusbsystem.EPivotPosition.shoot_speaker)));
+        //Test
+
+        /********** Intaking **********/
+        Operator.rightTrigger().whileTrue(
+                Commands.parallel(
+                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed),
+                    Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.intake))
+                .andThen(Intake.Command_IntakeNote())
+        );
+
+        Operator.rightTrigger().onFalse(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed));
+
+        /********** Outtake **********/
+//        Operator.rightBumper().onTrue()
 
 
-        // -- Vision
+        /********** Scoring **********/
+       Operator.a().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed))); //stow
+       Operator.b().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.shoot_speaker))); //shoot speaker
+       Operator.x().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.amp))); // shoot amp
+       Operator.y().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.trap))); // place trap
+
+        /********** Climbing **********/
+        Operator.leftStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
+        Operator.rightStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_secondpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
+
+
+        /********** Vision **********/
         // Operator.back().onTrue(LimelightVision.SetPipelineCommand(0).ignoringDisable(true));
         Operator.start().onTrue(LimelightVision.SetPipelineCommand(1).ignoringDisable(true));
-        Operator.rightStick().onTrue(LimelightVision.SetPipelineCommand(2).ignoringDisable(true));
+//        Operator.rightStick().onTrue(LimelightVision.SetPipelineCommand(2).ignoringDisable(true));
+
 
     }
 
@@ -137,13 +162,23 @@ public class RobotContainer
             drivetrain.seedFieldRelative(new Pose2d(new Translation2d(), Rotation2d.fromDegrees(90)));
         }
         drivetrain.registerTelemetry(logger::telemeterize);
-        Driver.pov(0).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0.5).withVelocityY(0)));
-
-        Driver.pov(180).whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(0)));
+        Driver.povUp().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0.5).withVelocityY(0)));
+        Driver.povUpRight().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0.5).withVelocityY(-0.5)));
+        Driver.povUpLeft().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0.5).withVelocityY(0.5)));
+        Driver.povDownRight().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(-0.5)));
+        Driver.povDownLeft().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(0.5)));
+        Driver.povDown().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(0)));
         Driver.povRight().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0).withVelocityY(-0.5)));
         Driver.povLeft().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0).withVelocityY(0.5)));
+        Driver.leftBumper().whileTrue(drivetrain.applyRequest(() -> AimRobot.withRotationalRate(LimelightVision.shooterCamera.getBestTarget().getX()))); // TODO: I don't know if this will work (if the robot has no target does it return 0?)
+
+
+//            Driver.leftBumper().whileTrue(drivetrain.applyRequest(() -> AimRobot.withRotationalRate(LimelightVision.shooterCamera.getBestTarget().getX()));
+
+
 
     }
+
 
     private void ConfigureAutos()
     {
