@@ -1,6 +1,6 @@
 package friarLib2.hardware;
 
-import com.ctre.phoenix.sensors.CANCoder;
+import com.ctre.phoenix6.hardware.CANcoder;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 
@@ -12,7 +12,7 @@ public interface SwerveModule {
     public SwerveModuleState getState ();
     public SwerveModulePosition getPosition ();
 
-    public CANCoder GetCanCoder();
+    public CANcoder GetCanCoder();
 
     default public void outputToDashboard () {}
 
