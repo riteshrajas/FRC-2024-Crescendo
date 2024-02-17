@@ -1,4 +1,4 @@
-package frc.robot;
+package frc.robot.subsystems.VisionSystems;
 
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
@@ -25,7 +25,6 @@ public class LimelightVision {
     {
         return Commands.runOnce( () -> shooterCamera.setPipeline(index) );
     }
-    
     
     public static IVisionCamera shooterCamera = new LimelightCamera();
 
