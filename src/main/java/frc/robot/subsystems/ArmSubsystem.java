@@ -16,6 +16,7 @@ import frc.robot.Constants;
 public class ArmSubsystem extends SubsystemBase
 {
     private static final boolean EnableRightMotor = false;
+    private static final boolean TunePID = false;
     private static final double ArmTolerance = 10.0 / 360.0;
 
     public enum EArmPosition {
@@ -146,6 +147,7 @@ public class ArmSubsystem extends SubsystemBase
 
     private void PublishConfigs()
     {
+        if (!TunePID) { return; }
 
         SmartDashboard.putNumber("Arm.Target", 0);
         SmartDashboard.putNumber("Arm.Position", 0);
@@ -169,6 +171,8 @@ public class ArmSubsystem extends SubsystemBase
 
     private void UpdateConfigs()
     {
+        if (!TunePID) { return; }
+
         var dirty = false;
 
         var p = SmartDashboard.getNumber("Arm.Configs.P", TalonConfigs_Slot0.kP);
