@@ -3,9 +3,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.controls.VelocityDutyCycle;
+import com.ctre.phoenix6.controls.*;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -46,7 +44,6 @@ public class ArmSubsystem extends SubsystemBase
 
     // -- Control Requests
     private final MotionMagicVoltage MotionMagicRequest = new MotionMagicVoltage(0);
-    private final VelocityDutyCycle VelocityRequest = new VelocityDutyCycle(0);
 
 
     @Override
@@ -77,20 +74,23 @@ public class ArmSubsystem extends SubsystemBase
         TalonConfigs_Slot0 = TalonConfigs.Slot0;
         TalonConfigs_MotionMagic = TalonConfigs.MotionMagic;
 
-        TalonConfigs_Slot0.kP = 7;
+        TalonConfigs_Slot0.kP = 10;
         TalonConfigs_Slot0.kI = 0;
-        TalonConfigs_Slot0.kD = 0;
+        TalonConfigs_Slot0.kD = 0.2;
 
-        TalonConfigs_Slot0.kS = 0; // Static
-        TalonConfigs_Slot0.kA = 0; // Acceleration
-        TalonConfigs_Slot0.kV = 0; // Velocity
+        TalonConfigs_Slot0.kS = 0.35; // Static
+        TalonConfigs_Slot0.kA = 0.01; // Acceleration
+        TalonConfigs_Slot0.kV = 0.12; // Velocity
         TalonConfigs_Slot0.kG = 0; // Gravity
 
         TalonConfigs_Slot0.withGravityType(GravityTypeValue.Arm_Cosine);
 
-        TalonConfigs_MotionMagic.MotionMagicAcceleration = 40; // rps/s acceleration (0.5 seconds)
+        TalonConfigs_MotionMagic.MotionMagicAcceleration = 60; // rps/s acceleration (0.5 seconds)
         TalonConfigs_MotionMagic.MotionMagicCruiseVelocity = 80; // rps cruise velocity
         TalonConfigs_MotionMagic.MotionMagicJerk = 1600; // rps/s^2 jerk (0.1 seconds)
+        TalonConfigs_MotionMagic.MotionMagicExpo_kA = 0.1;
+        TalonConfigs_MotionMagic.MotionMagicExpo_kV = 0.1;
+
         MotionMagicRequest.Slot = 0;
     }
 
@@ -160,6 +160,8 @@ public class ArmSubsystem extends SubsystemBase
         SmartDashboard.putNumber("Arm.Configs.MMCruise", TalonConfigs_MotionMagic.MotionMagicCruiseVelocity);
         SmartDashboard.putNumber("Arm.Configs.MMAccel", TalonConfigs_MotionMagic.MotionMagicAcceleration);
         SmartDashboard.putNumber("Arm.Configs.MMJerk", TalonConfigs_MotionMagic.MotionMagicJerk);
+        SmartDashboard.putNumber("Arm.Configs.MMExpoA", TalonConfigs_MotionMagic.MotionMagicExpo_kA);
+        SmartDashboard.putNumber("Arm.Configs.MMExpoV", TalonConfigs_MotionMagic.MotionMagicExpo_kV);
     }
 
     private void UpdateConfigs()
@@ -178,6 +180,8 @@ public class ArmSubsystem extends SubsystemBase
         var mmA = SmartDashboard.getNumber("Arm.Configs.MMAccel", TalonConfigs_MotionMagic.MotionMagicAcceleration);
         var mmC = SmartDashboard.getNumber("Arm.Configs.MMCruise", TalonConfigs_MotionMagic.MotionMagicCruiseVelocity);
         var mmJ = SmartDashboard.getNumber("Arm.Configs.MMJerk", TalonConfigs_MotionMagic.MotionMagicJerk);
+        var mmEA = SmartDashboard.getNumber("Arm.Configs.mmExpoA", TalonConfigs_MotionMagic.MotionMagicExpo_kA);
+        var mmEV = SmartDashboard.getNumber("Arm.Configs.mmExpoV", TalonConfigs_MotionMagic.MotionMagicExpo_kV);
 
         if (p != TalonConfigs_Slot0.kP) { TalonConfigs_Slot0.kP = p; dirty = true; }
         if (i != TalonConfigs_Slot0.kI) { TalonConfigs_Slot0.kI = i; dirty = true; }
@@ -191,6 +195,8 @@ public class ArmSubsystem extends SubsystemBase
         if (mmC != TalonConfigs_MotionMagic.MotionMagicCruiseVelocity) { TalonConfigs_MotionMagic.MotionMagicCruiseVelocity = mmC; dirty = true; }
         if (mmA != TalonConfigs_MotionMagic.MotionMagicAcceleration) { TalonConfigs_MotionMagic.MotionMagicAcceleration = mmA; dirty = true; }
         if (mmJ != TalonConfigs_MotionMagic.MotionMagicJerk) { TalonConfigs_MotionMagic.MotionMagicJerk = mmJ; dirty = true; }
+        if (mmEA != TalonConfigs_MotionMagic.MotionMagicExpo_kA) { TalonConfigs_MotionMagic.MotionMagicExpo_kA = mmEA; dirty = true; }
+        if (mmEV != TalonConfigs_MotionMagic.MotionMagicExpo_kV) { TalonConfigs_MotionMagic.MotionMagicExpo_kV = mmEV; dirty = true; }
 
         if (dirty)
         {
