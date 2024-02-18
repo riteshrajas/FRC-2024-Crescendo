@@ -6,6 +6,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.*;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -15,6 +16,7 @@ import frc.robot.Constants;
 public class ArmSubsystem extends SubsystemBase
 {
     private static final boolean EnableRightMotor = false;
+    private static final double ArmTolerance = 10.0 / 360.0;
 
     public enum EArmPosition {
         stowed(0),
@@ -115,18 +117,18 @@ public class ArmSubsystem extends SubsystemBase
     }
 
     public Command Command_SetPosition(EArmPosition position) {
-        return run(() ->
-        {
-            SmartDashboard.putNumber("Arm.Target", position.Rotations);
-
-            LeftMotor.setControl(MotionMagicRequest.withPosition(position.Rotations));
-        });
-        // .until(() ->
-        // {
-        //     double actualRotation = LeftArmMotor.getPosition().getValue();
-        //     SmartDashboard.putNumber("Arm Rotation", actualRotation);
-        // });
-        // return Math.abs(actualRotation - position.EncoderCount) < 0.0001; // TODO: Tune this error threshold
+        return
+            run(() ->
+            {
+                SmartDashboard.putNumber("Arm.Target", position.Rotations);
+                LeftMotor.setControl(MotionMagicRequest.withPosition(position.Rotations));
+            })
+            .until(() ->
+            {
+                double actualRotation = LeftMotor.getPosition().getValue();
+                return MathUtil.isNear(position.Rotations, actualRotation, ArmTolerance);
+            })
+            .andThen(() -> System.out.println("Arm reached target!"));
     }
 
     public Command zeroArmEncoder()
@@ -147,6 +149,7 @@ public class ArmSubsystem extends SubsystemBase
 
         SmartDashboard.putNumber("Arm.Target", 0);
         SmartDashboard.putNumber("Arm.Position", 0);
+        SmartDashboard.putNumber("Arm.Error", 0);
 
         SmartDashboard.putNumber("Arm.Configs.P", TalonConfigs_Slot0.kP);
         SmartDashboard.putNumber("Arm.Configs.I", TalonConfigs_Slot0.kI);
