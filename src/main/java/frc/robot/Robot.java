@@ -33,7 +33,7 @@ public class Robot extends TimedRobot
         // autonomous chooser on the dashboard.
         m_robotContainer = new RobotContainer();
 
-//        CameraServer.startAutomaticCapture();
+        CameraServer.startAutomaticCapture();
 
         m_robotContainer.drivetrain.getDaqThread().setThreadPriority(99);
 
@@ -54,6 +54,8 @@ public class Robot extends TimedRobot
         // and running subsystem periodic() methods.  This must be called from the robot's periodic
         // block in order for anything in the Command-based framework to work.
         CommandScheduler.getInstance().run();
+
+
 
         SmartDashboard.putNumber("distance estimator", LimelightVision.getInchesFromTarget());
         

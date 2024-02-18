@@ -105,28 +105,34 @@ public class RobotContainer
         // ----------------------------------------------------------------------------------------
         // -- Operator
         // ----------------------------------------------------------------------------------------
-        // -- Arm
-        //Test
+
+        /********** Testing arm code **********/
+        Operator.a().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)); //stowed
+        Operator.b().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer)); //shot speaker
+        Operator.x().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp)); //amp
+        Operator.y().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap)); //trap
+
+
 
         /********** Intaking **********/
-        Operator.rightTrigger().whileTrue(
-                Commands.parallel(
-                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed),
-                    Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.intake))
-                .andThen(Intake.Command_IntakeNote())
-        );
-
-        Operator.rightTrigger().onFalse(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed));
+//        Operator.rightTrigger().whileTrue(
+//                Commands.parallel(
+//                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed),
+//                    Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.intake))
+//                .andThen(Intake.Command_IntakeNote())
+//        );
+//
+//        Operator.rightTrigger().onFalse(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed));
 
         /********** Outtake **********/
 //        Operator.rightBumper().onTrue()
 
 
         /********** Scoring **********/
-       Operator.a().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed))); //stow
-       Operator.b().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.shoot_speaker))); //shoot speaker
-       Operator.x().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.amp))); // shoot amp
-       Operator.y().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.trap))); // place trap
+//       Operator.a().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed))); //stow
+//       Operator.b().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.shoot_speaker))); //shoot speaker
+//       Operator.x().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.amp))); // shoot amp
+//       Operator.y().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.trap))); // place trap
 
         /********** Climbing **********/
         Operator.leftStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
