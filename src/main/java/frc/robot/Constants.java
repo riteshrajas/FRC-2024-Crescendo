@@ -9,8 +9,8 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
-//import frc.robot.Swerve.SwerveCANIDs;
 import friarLib2.utility.PIDParameters;
 
 
@@ -139,6 +139,23 @@ public final class Constants {
         public static final int SHOOTER1_MOTOR_ID = 98;
         public static final int SHOOTER2_MOTOR_ID = 97;
     }
+
+    public class Vision
+    {
+        // Consistent Constants
+        final double camera_height_meters = Units.inchesToMeters(0); // TODO: Tune
+        final double target_height_meters = Units.feetToMeters(0); // TODO: Tune
+        final double camera_pitch_radians = Units.degreesToRadians(0); // TODO: Tune
+
+        final double goal_distance_meters = Units.feetToMeters(3);
+
+        final double linear_p = 0.1;
+        final double linear_d = 0.0;
+
+        final double angular_p = 0.1;
+        final double angular_d = 0.0;
+    }
+
 }
 
 

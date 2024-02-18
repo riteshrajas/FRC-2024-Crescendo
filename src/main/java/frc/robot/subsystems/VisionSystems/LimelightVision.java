@@ -1,12 +1,12 @@
-package frc.robot;
+package frc.robot.subsystems.VisionSystems;
 
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import friarLib2.vision.LimelightCamera;
 import friarLib2.vision.IVisionCamera;
+import friarLib2.vision.LimelightCamera;
 import friarLib2.vision.utility.PixelToAngle;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -25,7 +25,6 @@ public class LimelightVision {
     {
         return Commands.runOnce( () -> shooterCamera.setPipeline(index) );
     }
-    
     
     public static IVisionCamera shooterCamera = new LimelightCamera();
 
