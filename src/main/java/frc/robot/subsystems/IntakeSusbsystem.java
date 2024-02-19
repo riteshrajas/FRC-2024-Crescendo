@@ -167,7 +167,7 @@ public class IntakeSusbsystem extends SubsystemBase {
     }
 
     public void periodic() {
-        SmartDashboard.putNumber("Arm Position", PivotMotor.getPosition().getValue());
+        SmartDashboard.putNumber("pivot Position", PivotMotor.getPosition().getValue());
     }
 }
 
