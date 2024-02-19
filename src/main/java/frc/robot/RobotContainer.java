@@ -5,6 +5,8 @@
 package frc.robot;
 
 
+import org.photonvision.PhotonCamera;
+
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
@@ -22,7 +24,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.VisionSystems.LimelightVision;
-import frc.robot.subsystems.VisionSystems.PhotonVision;
+import friarLib2.vision.LimelightCamera;
 import frc.robot.subsystems.IntakeSusbsystem;
 
 
@@ -54,6 +56,10 @@ public class RobotContainer
     public final SwerveRequest.RobotCentric AimRobot = new SwerveRequest.RobotCentric().withSteerRequestType(SwerveModule.SteerRequestType.MotionMagicExpo);
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
     private final Telemetry logger = new Telemetry(MaxSpeed);
+
+    // -- Camera's
+    private LimelightCamera shooterCamera = new LimelightCamera();
+    private PhotonCamera testCamera = new PhotonCamera("Test");
 
     // -- Subsystems 
     private final ArmSubsystem Arm = new ArmSubsystem();
@@ -170,7 +176,7 @@ public class RobotContainer
         Driver.povDown().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(-0.5).withVelocityY(0)));
         Driver.povRight().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0).withVelocityY(-0.5)));
         Driver.povLeft().whileTrue(drivetrain.applyRequest(() -> forwardStraight.withVelocityX(0).withVelocityY(0.5)));
-        Driver.leftBumper().whileTrue(drivetrain.applyRequest(() -> AimRobot.withRotationalRate(LimelightVision.shooterCamera.getBestTarget().getX()))); // TODO: I don't know if this will work (if the robot has no target does it return 0?)
+        Driver.rightBumper().whileTrue(drivetrain.applyRequest(() -> AimRobot.withRotationalRate(LimelightVision.shooterCamera.getBestTarget().getX()))); // TODO: I don't know if this will work (if the robot has no target does it return 0?)
         Driver.leftTrigger().whileTrue(drivetrain.applyRequest(() -> {
             if (LimelightVision.shooterCamera.getBestTarget().getX() > 0.1) {
                 return AimRobot.withRotationalRate(LimelightVision.shooterCamera.getBestTarget().getX() * -1);
@@ -181,7 +187,7 @@ public class RobotContainer
             }
         }));
         
-        //Driver.rightBumper().whileTrue(drivetrain.applyRequest(() -> AimRobot.withRotationalRate(PhotonVision.getBestTarget())));
+        //Driver.rightBumper().whileTrue(drivetrain.applyRequest(() -> AimRobot.withRotationalRate(testCamera)));
 
 
 //            Driver.leftBumper().whileTrue(drivetrain.applyRequest(() -> AimRobot.withRotationalRate(LimelightVision.shooterCamera.getBestTarget().getX()));
