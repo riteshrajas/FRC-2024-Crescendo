@@ -94,7 +94,7 @@ public final class Constants {
 
     public class Intake {
         /********** CAN ID's **********/
-        public static final int INTAKE_MOTOR_ID = 4;
+        public static final int INTAKE_MOTOR_ID = 23;
         public static final int PIVOT_MOTOR_ID = 10;
 
         /********** Amp Scoring **********/

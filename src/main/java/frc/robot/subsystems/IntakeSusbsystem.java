@@ -28,15 +28,16 @@ public class IntakeSusbsystem extends SubsystemBase {
         }
     }
 
-    public enum EOutakeType
-    {
+    public enum EOutakeType {
         amp(0),
         speaker(0),
         trap(0);
 
         private final int RPM;
 
-        EOutakeType(int rpm){ RPM = rpm; }
+        EOutakeType(int rpm) {
+            RPM = rpm;
+        }
     }
 
     private TalonFX PivotMotor = new TalonFX(Constants.Intake.PIVOT_MOTOR_ID);
@@ -52,10 +53,12 @@ public class IntakeSusbsystem extends SubsystemBase {
 
     public IntakeSusbsystem() {
         ConfigureMotors(PivotMotor, 0, 0, 0, 0);
-        IntakeMotor = CreateSparkMotor(Constants.Intake.INTAKE_MOTOR_ID);
+        IntakeMotor = CreateSparkMotor(23);
         IntakePID = CreatePID(IntakeMotor);
+        IntakeEncoder = IntakeMotor.getEncoder();
 //        ConfigureMotors(IntakeMotor, 0, 0, 0, 0);
         MotionMagic.Slot = 1;
+        IntakeMotor.burnFlash();
 
     }
 
@@ -79,6 +82,7 @@ public class IntakeSusbsystem extends SubsystemBase {
         motor.getConfigurator().apply(slot1Configs, 0.050);
         motor.setPosition(0);
     }
+
     private CANSparkFlex CreateSparkMotor(int motorId) {
         CANSparkFlex motor = new CANSparkFlex(motorId, CANSparkLowLevel.MotorType.kBrushless);
 
@@ -87,20 +91,21 @@ public class IntakeSusbsystem extends SubsystemBase {
 
         return motor;
     }
+
     private SparkPIDController CreatePID(CANSparkFlex motor) {
         var pid = motor.getPIDController();
 
-        pid.setP(0.1);
+        pid.setP(0.0004);
         pid.setI(0);
-        pid.setD(0);
+        pid.setD(0.01); //0.0000000005
         pid.setIZone(0);
-        pid.setFF(0);
+        pid.setFF(0.000015);
         pid.setOutputRange(-1, 1);
 
-        pid.setSmartMotionMaxVelocity(1000, 0);
-        pid.setSmartMotionMaxAccel(500, 0);
-        pid.setSmartMotionMinOutputVelocity(0, 0);
-        pid.setSmartMotionAllowedClosedLoopError(0.0021, 0);
+//        pid.setSmartMotionMaxVelocity(1000, 0);
+//        pid.setSmartMotionMaxAccel(500, 0);
+//        pid.setSmartMotionMinOutputVelocity(0, 0);
+//        pid.setSmartMotionAllowedClosedLoopError(0.0021, 0);
 
 
         return pid;
@@ -136,19 +141,40 @@ public class IntakeSusbsystem extends SubsystemBase {
                 });
     }
 
-    public Command Command_IntakeNote()
-    {
+    public Command Command_IntakeNote() {
         return
-            startEnd(
-                () -> { IntakePID.setReference(1, CANSparkBase.ControlType.kSmartVelocity, 0); },
-                () -> { IntakePID.setReference(0, CANSparkBase.ControlType.kSmartVelocity, 0); }
-            )
-            .until(() ->
-            {
-                //TODO: check for limit switch
-                return false;
-            });
+                startEnd(
+                        () -> {
+                            IntakePID.setReference(1, CANSparkBase.ControlType.kSmartVelocity, 0);
+                        },
+                        () -> {
+                            IntakePID.setReference(0, CANSparkBase.ControlType.kSmartVelocity, 0);
+                        }
+                )
+                        .until(() ->
+                        {
+                            //TODO: check for limit switch
+                            return false;
+                        });
     }
+
+    public Command Command_testInake(double speed)
+    {
+
+        return run(() ->
+        {
+            SmartDashboard.putNumber("Target Velocity", speed);
+            if (speed == 600)
+            {
+                IntakePID.setReference(speed, CANSparkBase.ControlType.kVelocity);
+            }
+            else
+            {
+                IntakeMotor.stopMotor();
+            }
+        });
+    }
+
 
     public Command Command_OuttakeNote(EOutakeType outakeType)
     {
@@ -168,6 +194,7 @@ public class IntakeSusbsystem extends SubsystemBase {
 
     public void periodic() {
         SmartDashboard.putNumber("pivot Position", PivotMotor.getPosition().getValue());
+        SmartDashboard.putNumber("Actual Velocity", IntakeEncoder.getVelocity());
     }
 }
 

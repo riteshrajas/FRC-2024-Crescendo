@@ -100,6 +100,8 @@ public class RobotContainer
         // Zero IMU
 //       new Trigger(OI.DriverLeft::getTop).onTrue(new InstantCommand(IMU::zeroIMU));
 
+        Driver.povUp().onTrue(Intake.Command_testInake(600));
+        Driver.povUp().onFalse(Intake.Command_testInake(0));
 
 
         // ----------------------------------------------------------------------------------------
