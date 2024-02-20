@@ -37,4 +37,26 @@ public class FieldConstants
 
     public static final double feeder_opening_from_apriltag = Units.inchesToMeters(0); // TODO: set distance
 
+    public static AprilTagFieldLayout getFieldLayout()
+    {
+        if (DriverStation.getAlliance().get() == DriverStation.Alliance.Blue)
+        {
+            return blue_field_layout;
+        }
+        else
+        {
+            return red_field_layout;
+        }
+    }
+
+    public static void update()
+    {
+        if (DriverStation.getAlliance().get() != storedAlliance)
+        {
+            storedAlliance = DriverStation.getAlliance().get();
+            System.out.println(storedAlliance);
+
+            
+        }
+    }
 }
