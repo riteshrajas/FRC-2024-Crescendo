@@ -21,6 +21,12 @@ public class VisionTarget {
         pose = new Transform2d();
     }
 
+    public double getPhotonX () {return x;}
+    public double getPhotonY () {return y;}
+    public double getPhotonArea () {return area;}
+    public double getPhotonSkew () {return skew;}
+    public Transform2d getPhotonPose () {return pose;}
+
     public VisionTarget (double x, double y, double area, double skew) {
         this.x = x;
         this.y = y;
