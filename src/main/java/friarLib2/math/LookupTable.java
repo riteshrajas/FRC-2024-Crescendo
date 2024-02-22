@@ -50,21 +50,27 @@ public class LookupTable
         Point2D.Double Right = null;
         
         // -- Find the node we're past
-        for (int i = 0; i < numNodes; i++) 
+        for (Point2D.Double Node : Nodes)
         {
-            var Node = Nodes.get(i);
-            if (input > Node.x) 
+            if (input > Node.x)
             {
                 Left = Node;
-            }
+            } 
             else
             {
-                Right = Nodes.get(i);
+                Right = Node;
                 break;
             }
         }
-
-        assert Right != null : "Didn't find a Right value";
+        
+        assert Right != null : "Didn't find a right node";
+        
+        // -- Early out if the outputs are the same, make sure we don't divide by 0 
+        if (Left.y == Right.y)
+        {
+            return Left.y;
+        }
+        
         return FriarMath.Remap(input, Left.x, Right.x, Left.y, Right.y);
     }
 }
