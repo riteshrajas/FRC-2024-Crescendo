@@ -98,21 +98,26 @@ public class RobotContainer
         ConfigureOperatorBindings();
 
         drivetrain.registerTelemetry(logger::telemeterize);
-
-
-        // TODO: Move me
-        NamedCommands.registerCommand("Arm Score", Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.shoot_speaker)));
-        NamedCommands.registerCommand("Arm Stow", Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
-        NamedCommands.registerCommand("Intake Note", Intake.Command_intakeauto());
-        NamedCommands.registerCommand("stop Intake motors", Intake.Command_stopMotor());
-        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_scoreSpeaker());
     }
 
     
     
     private void ConfigureAutoCommands()
     {
-        autoChooser.addOption("mid", drivetrain.getAutoPath("3 note middle") );   
+        autoChooser.addOption("mid", drivetrain.getAutoPath("3 note middle") );
+
+
+        NamedCommands.registerCommand("Arm Score", Commands.parallel(
+                  Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer)
+                , Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.shoot_speaker)));
+        
+        NamedCommands.registerCommand("Arm Stow", Commands.parallel(
+                  Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)
+                , Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
+        
+        NamedCommands.registerCommand("Intake Note", Intake.Command_intakeauto());
+        NamedCommands.registerCommand("stop Intake motors", Intake.Command_stopMotor());
+        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_scoreSpeaker());
     }
     
     public Command GetAutonomousCommand()
