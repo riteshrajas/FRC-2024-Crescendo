@@ -8,6 +8,7 @@ package frc.robot;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -43,7 +44,7 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     // -- Tuning Values
     // --------------------------------------------------------------------------------------------
-    private double MaxSpeed = 2.11; // 6 meters per second desired top speed
+    private double MaxSpeed = 3.11; // 6 meters per second desired top speed
     private double MaxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
     private LookupTable ThrottleLookup = LookupTable.CreateNormalized()
             .AddValue(0.1, 0) // deadband
@@ -97,6 +98,14 @@ public class RobotContainer
         ConfigureOperatorBindings();
 
         drivetrain.registerTelemetry(logger::telemeterize);
+
+
+        // TODO: Move me
+        NamedCommands.registerCommand("Arm Score", Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.shoot_speaker)));
+        NamedCommands.registerCommand("Arm Stow", Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
+        NamedCommands.registerCommand("Intake Note", Intake.Command_intakeauto());
+        NamedCommands.registerCommand("stop Intake motors", Intake.Command_stopMotor());
+        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_scoreSpeaker());
     }
 
     
@@ -176,8 +185,8 @@ public class RobotContainer
         // Operator.y().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.trap))); // place trap
 
         // -- Climbing
-        Operator.leftStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
-        Operator.rightStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_secondpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
+        // Operator.leftStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
+        // Operator.rightStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_secondpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
 
 
         // -- Vision
