@@ -117,6 +117,9 @@ public class ArmSubsystem extends SubsystemBase
         System.out.println("Configs Applied!");
     }
 
+    /*
+        Command for setting the position of the arm using motion magic foc
+    */
     public Command Command_SetPosition(EArmPosition position) {
         return
             run(() ->
@@ -131,7 +134,9 @@ public class ArmSubsystem extends SubsystemBase
             })
             .andThen(() -> System.out.println("Arm reached target!"));
     }
-
+    /*
+    Zeroing the arm encoder
+    */
     public Command zeroArmEncoder()
     {
        return runOnce(() -> LeftMotor.setPosition(0));
