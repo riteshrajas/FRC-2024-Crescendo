@@ -82,8 +82,20 @@ public class VisionIOLimelight implements VisionIO {
         lastData = data;
     }
 
+    public boolean hasTargets(VisionIOInputs inputs)
+    {
+        if (inputs.hasTarget)
+        {
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
     @Override
     public String getName() {
         return name;
     }
+    
 }
