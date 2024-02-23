@@ -19,7 +19,6 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.IntakeSusbsystem;
 import frc.robot.subsystems.SwerveSubsystem;
-import frc.robot.subsystems.VisionSystems.LimelightVision;
 import friarLib2.math.LookupTable;
 import friarLib2.vision.LimelightCamera;
 import org.photonvision.PhotonCamera;
@@ -118,8 +117,8 @@ public class RobotContainer
     {
         drivetrain.setDefaultCommand(
                 drivetrain.applyRequest(() -> drive
-                        .withVelocityX(-ThrottleLookup.GetValue(Driver.getLeftY()) * MaxSpeed) // Drive forward with negative Y (forward)
-                        .withVelocityY(-ThrottleLookup.GetValue(Driver.getLeftX()) * MaxSpeed) // Drive left with negative X (left)
+                        .withVelocityX(-ThrottleLookup.GetValueNormalized(Driver.getLeftY()) * MaxSpeed) // Drive forward with negative Y (forward)
+                        .withVelocityY(-ThrottleLookup.GetValueNormalized(Driver.getLeftX()) * MaxSpeed) // Drive left with negative X (left)
                         .withRotationalRate(DefaultDriveRotationRate()) // Drive counterclockwise with negative X (left)
                 ).ignoringDisable(true));
     }
@@ -183,7 +182,7 @@ public class RobotContainer
 
         // -- Vision
         // Operator.back().onTrue(LimelightVision.SetPipelineCommand(0).ignoringDisable(true));
-        Operator.start().onTrue(LimelightVision.SetPipelineCommand(1).ignoringDisable(true));
+        //Operator.start().onTrue(LimelightVision.SetPipelineCommand(1).ignoringDisable(true));
         // Operator.rightStick().onTrue(LimelightVision.SetPipelineCommand(2).ignoringDisable(true));
 
 
@@ -203,7 +202,7 @@ public class RobotContainer
             
              return tx * -0.1;
         }
-        return -ThrottleLookup.GetValue(Driver.getRightX()) * MaxAngularRate;
+        return -ThrottleLookup.GetValueNormalized(Driver.getRightX()) * MaxAngularRate;
     }
 }
 

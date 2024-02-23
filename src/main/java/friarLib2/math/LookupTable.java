@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.concurrent.locks.Condition;
 
 public class LookupTable 
 {
@@ -33,17 +34,17 @@ public class LookupTable
         var numNodes = Nodes.size();
         
         // -- Clamp Low
-        var low = Nodes.get(0).x;
-        if (input <= low) 
+        var low = Nodes.get(0);
+        if (input <= low.x)
         {
-            return low; 
+            return low.y;
         }
         
         // -- Clamp High
-        var high = Nodes.get(numNodes - 1).x;
-        if (input >= high)
+        var high = Nodes.get(numNodes - 1);
+        if (input >= high.x)
         {
-            return high; 
+            return high.y;
         }
         
         Point2D.Double Left = Nodes.get(0);
@@ -72,5 +73,13 @@ public class LookupTable
         }
         
         return FriarMath.Remap(input, Left.x, Right.x, Left.y, Right.y);
+    }
+
+
+    public double GetValueNormalized(double input)
+    {
+        var signum = input < 0 ? -1 : 1;
+
+        return GetValue(Math.abs(input)) * signum;
     }
 }
