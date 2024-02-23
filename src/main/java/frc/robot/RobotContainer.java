@@ -46,7 +46,7 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     private double MaxSpeed = 3.11; // 6 meters per second desired top speed
     private double MaxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
-    private LookupTable ThrottleLookup = LookupTable.CreateNormalized()
+    private LookupTable ThrottleLookup = new LookupTable.Normalized()
             .AddValue(0.1, 0) // deadband
             .AddValue(0.55, 0.15)
             .AddValue(0.8, 0.4);
@@ -131,8 +131,8 @@ public class RobotContainer
     {
         drivetrain.setDefaultCommand(
                 drivetrain.applyRequest(() -> drive
-                        .withVelocityX(-ThrottleLookup.GetValueNormalized(Driver.getLeftY()) * MaxSpeed) // Drive forward with negative Y (forward)
-                        .withVelocityY(-ThrottleLookup.GetValueNormalized(Driver.getLeftX()) * MaxSpeed) // Drive left with negative X (left)
+                        .withVelocityX(-ThrottleLookup.GetValue(Driver.getLeftY()) * MaxSpeed) // Drive forward with negative Y (forward)
+                        .withVelocityY(-ThrottleLookup.GetValue(Driver.getLeftX()) * MaxSpeed) // Drive left with negative X (left)
                         .withRotationalRate(DefaultDriveRotationRate()) // Drive counterclockwise with negative X (left)
                 ).ignoringDisable(true));
     }
@@ -216,7 +216,7 @@ public class RobotContainer
             
              return tx * -0.1;
         }
-        return -ThrottleLookup.GetValueNormalized(Driver.getRightX()) * MaxAngularRate;
+        return -ThrottleLookup.GetValue(Driver.getRightX()) * MaxAngularRate;
     }
 }
 
