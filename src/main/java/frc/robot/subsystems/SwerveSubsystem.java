@@ -20,7 +20,6 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.VisionSystems.VisionIOLimelight;
 import friarLib2.utility.Vector3309;
 import friarLib2.vision.VisionIO;
 
@@ -70,11 +69,6 @@ public class SwerveSubsystem extends SwerveDrivetrain implements Subsystem {
                 this);
 
 
-    }
-
-    public void TurnInDirectionOfTarget(VisionIOLimelight inputs)
-    {
-        
     }
 
     public Command applyRequest(Supplier<SwerveRequest> requestSupplier) {
