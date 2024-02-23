@@ -5,6 +5,9 @@
 package frc.robot;
 
 
+import com.pathplanner.lib.auto.NamedCommands;
+import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.XboxController;
 import org.photonvision.PhotonCamera;
 
 import com.ctre.phoenix6.Utils;
@@ -41,14 +44,15 @@ public class RobotContainer
     public static CommandXboxController Operator = new CommandXboxController(1);
 
 
-    private double MaxSpeed = 2.11; // 6 meters per second desired top speed
+
+    private double MaxSpeed = 3.11; // 6 meters per second desired top speed
     private double MaxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     public final SwerveSubsystem drivetrain = TunerConstants.DriveTrain; // My drivetrain
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-            .withDeadband(MaxSpeed * 0.2).withRotationalDeadband(MaxAngularRate * 0.2) // Add a 10% deadband
+            .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage); // I want field-centric
     // driving in open loop
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
@@ -80,6 +84,11 @@ public class RobotContainer
         // ConfigureAutoCommands();
         SmartDashboard.putData("Auto Chooser", autoChooser);
 
+        NamedCommands.registerCommand("Arm Score", Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.shoot_speaker)));
+        NamedCommands.registerCommand("Arm Stow", Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
+        NamedCommands.registerCommand("Intake Note", Intake.Command_intakeauto());
+        NamedCommands.registerCommand("stop Intake motors", Intake.Command_stopMotor());
+        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_scoreSpeaker());
 
     }
 
@@ -105,9 +114,8 @@ public class RobotContainer
 
         // Zero IMU
 //       new Trigger(OI.DriverLeft::getTop).onTrue(new InstantCommand(IMU::zeroIMU));
-
-        Driver.povUp().onTrue(Intake.Command_testInake(600));
-        Driver.povUp().onFalse(Intake.Command_testInake(0));
+//
+//
 
 
         // ----------------------------------------------------------------------------------------
@@ -130,6 +138,9 @@ public class RobotContainer
 //                .andThen(Intake.Command_IntakeNote())
 //        );
 //
+//        Driver.rightTrigger().onTrue(Intake.Command_IntakeNote());
+//        Driver.x().onTrue(Intake.Command_testInake(600));
+
 //        Operator.rightTrigger().onFalse(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed));
 
         /********** Outtake **********/
@@ -143,8 +154,8 @@ public class RobotContainer
 //       Operator.y().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.trap))); // place trap
 
         /********** Climbing **********/
-        Operator.leftStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
-        Operator.rightStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_secondpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
+//        Operator.leftStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
+//        Operator.rightStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_secondpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
 
 
         /********** Vision **********/
