@@ -160,7 +160,7 @@ public class IntakeSusbsystem extends SubsystemBase {
     }
 
     private boolean isPressed() {
-        return !VexLimitSwitch.get();
+        return VexLimitSwitch.get();
     }
 
     /*
@@ -186,17 +186,15 @@ public class IntakeSusbsystem extends SubsystemBase {
      **/
     public Command Command_IntakeNote() {
         return
+                Commands.sequence(
                 startEnd(
                         () -> {
-                            IntakePID.setReference(3000, CANSparkBase.ControlType.kVelocity);
+                            IntakePID.setReference(2000, CANSparkBase.ControlType.kVelocity);
                         },
                         () -> {
-                            if (isPressed()) {
-                                Command_Rumble();
-                            }
                             IntakePID.setReference(0, CANSparkBase.ControlType.kVelocity);
                             IntakeMotor.stopMotor();
-                            Command_SetPivotPosition(EPivotPosition.stowed);
+
 
                         }
                 )
@@ -204,7 +202,10 @@ public class IntakeSusbsystem extends SubsystemBase {
                         {
                             //TODO: check for limit switch
                             return isPressed() || RobotContainer.Driver.getRightTriggerAxis() < 0.5;
-                        });
+                        }),
+                Command_Rumble().alongWith(Command_SetPivotPosition(EPivotPosition.stowed))
+
+        );
     }
 
     /*
@@ -214,10 +215,11 @@ public class IntakeSusbsystem extends SubsystemBase {
         return startEnd(
                 () -> {
                     rumbleTimer.start();
-                    RobotContainer.Operator.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
+                    System.out.println("Rumblin");
+                    RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
                 },
                 () -> {
-                    RobotContainer.Operator.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
+                    RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
                     rumbleTimer.stop();
                     rumbleTimer.reset();
                 }
@@ -239,10 +241,7 @@ public class IntakeSusbsystem extends SubsystemBase {
                     IntakeMotor.stopMotor();
                     Command_SetPivotPosition(EPivotPosition.stowed);
                 }
-        ).until(() ->
-        {
-            return VexLimitSwitch.get();
-        });
+        ).until(this::isPressed);
     }
 
     /*
@@ -340,7 +339,7 @@ public class IntakeSusbsystem extends SubsystemBase {
     public void periodic() {
         SmartDashboard.putNumber("pivot Position", PivotMotor.getPosition().getValue());
         SmartDashboard.putNumber("Actual Velocity", IntakeEncoder.getVelocity());
-        SmartDashboard.putBoolean("is limit switched pressed", !VexLimitSwitch.get());
+        SmartDashboard.putBoolean("is limit switched pressed", isPressed());
         UpdateConfigs();
     }
 
