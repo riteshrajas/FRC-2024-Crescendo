@@ -48,8 +48,8 @@ public class RobotContainer
     private double MaxAngularRate = 2.0 * Math.PI; // 3/4 of a rotation per second max angular velocity
     private LookupTable ThrottleLookup = new LookupTable.Normalized()
             .AddValue(0.1, 0) // deadband
-            .AddValue(0.55, 0.15)
-            .AddValue(0.8, 0.4);
+            .AddValue(0.55, 0.2)
+            .AddValue(0.8, 0.5);
 
     
     // --------------------------------------------------------------------------------------------
@@ -100,8 +100,7 @@ public class RobotContainer
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
-    
-    
+
     private void ConfigureAutoCommands()
     {
         autoChooser.addOption("mid", drivetrain.getAutoPath("3 note middle") );
@@ -144,6 +143,18 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     private void ConfigureDriverBindings()
     {
+
+        // Slowdrive relative to bot pose
+        Driver.povUp().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityX(.5))); // Fine-tune control forwards
+        Driver.povDown().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityX(-.5))); // Fine-tune control backwards
+        Driver.povRight().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityY(.5))); // Fine-tune control right
+        Driver.povLeft().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityY(-.5))); // Fine-tune control left
+
+        Driver.povUpRight().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityX(.5).withVelocityY(.5))); // Fine-tune control diagonally up and right
+        Driver.povUpLeft().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityX(.5).withVelocityY(-.5))); // Fine-tune control diagonally up and left
+        Driver.povDownLeft().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityX(-.5).withVelocityY(-.5))); // Fine-tune control diagonally down and left
+        Driver.povDownRight().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityX(-.5).withVelocityY(.5))); // Fine-tune control diagonally down and right
+
         Driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
         Driver.b().whileTrue(drivetrain.applyRequest(() -> point.withModuleDirection(new Rotation2d(-Driver.getLeftY(), -Driver.getLeftX()))));
 
