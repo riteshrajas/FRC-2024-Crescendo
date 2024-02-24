@@ -39,13 +39,13 @@ public class RobotContainer
     public static CommandXboxController Driver = new CommandXboxController(0);
     public static CommandXboxController Operator = new CommandXboxController(1);
 
-    
+
 
     // --------------------------------------------------------------------------------------------
     // -- Tuning Values
     // --------------------------------------------------------------------------------------------
     private double MaxSpeed = 3.11; // 6 meters per second desired top speed
-    private double MaxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
+    private double MaxAngularRate = 2.0 * Math.PI; // 3/4 of a rotation per second max angular velocity
     private LookupTable ThrottleLookup = new LookupTable.Normalized()
             .AddValue(0.1, 0) // deadband
             .AddValue(0.55, 0.15)
@@ -148,7 +148,7 @@ public class RobotContainer
         Driver.b().whileTrue(drivetrain.applyRequest(() -> point.withModuleDirection(new Rotation2d(-Driver.getLeftY(), -Driver.getLeftX()))));
 
         // reset the field-centric heading on left bumper press
-        Driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
+        Driver.y().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
 
         Driver.povUp().onTrue(Intake.Command_testInake(600));
         Driver.povUp().onFalse(Intake.Command_testInake(0));
@@ -206,7 +206,7 @@ public class RobotContainer
 
     private double DefaultDriveRotationRate()
     {
-        if (Driver.getHID().getRightBumper())
+        if (Driver.getHID().getLeftBumper())
         {
             var tx = NetworkTableInstance
                     .getDefault()
