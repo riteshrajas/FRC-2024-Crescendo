@@ -208,13 +208,11 @@ public class RobotContainer
     {
         if (Driver.getHID().getLeftBumper())
         {
-            var tx = NetworkTableInstance
-                    .getDefault()
-                    .getTable("limelight")
-                    .getEntry("tx")
-                    .getDouble(0);
-            
-             return tx * -0.1;
+            var target = Vision.GetBestTarget();
+            if (target != null)
+            {
+                return target.tx * -0.1;
+            }
         }
         return -ThrottleLookup.GetValue(Driver.getRightX()) * MaxAngularRate;
     }
