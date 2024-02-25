@@ -24,6 +24,9 @@ import friarLib2.math.LookupTable;
 import friarLib2.vision.LimelightCamera;
 import org.photonvision.PhotonCamera;
 
+import java.awt.*;
+import java.awt.geom.Point2D;
+
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -44,16 +47,15 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     // -- Tuning Values
     // --------------------------------------------------------------------------------------------
-    private double MaxSpeed = 3.11; // 6 meters per second desired top speed
     private double MaxAngularRate = 2.0 * Math.PI; // 3/4 of a rotation per second max angular velocity
     private LookupTable ThrottleLookup = new LookupTable.Normalized()
-            .AddValue(0.1, 0) // deadband
-            .AddValue(0.55, 0.15)
-            .AddValue(0.8, 0.4);
+            .AddValue(0.07, 0.0) // deadband
+            .AddValue(0.55, 0.05)
+            .AddValue(0.8, 0.15);
 
     
     // --------------------------------------------------------------------------------------------
-    // -- Subsystems
+    // -- Subsystems~
     // --------------------------------------------------------------------------------------------
     public final SwerveSubsystem drivetrain = TunerConstants.DriveTrain;
     private final ArmSubsystem Arm = new ArmSubsystem();
@@ -76,7 +78,7 @@ public class RobotContainer
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
     public final SwerveRequest.RobotCentric AimRobot = new SwerveRequest.RobotCentric().withSteerRequestType(SwerveModule.SteerRequestType.MotionMagicExpo);
-    private final Telemetry logger = new Telemetry(MaxSpeed);
+    private final Telemetry logger = new Telemetry(TunerConstants.kSpeedAt12VoltsMps);
 
 
 
@@ -100,8 +102,7 @@ public class RobotContainer
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
-    
-    
+
     private void ConfigureAutoCommands()
     {
         autoChooser.addOption("mid", drivetrain.getAutoPath("3 note middle") );
@@ -130,20 +131,34 @@ public class RobotContainer
     private void SetDefaultCommands()
     {
         drivetrain.setDefaultCommand(
-                drivetrain.applyRequest(() -> drive
-                        .withVelocityX(-ThrottleLookup.GetValue(Driver.getLeftY()) * MaxSpeed) // Drive forward with negative Y (forward)
-                        .withVelocityY(-ThrottleLookup.GetValue(Driver.getLeftX()) * MaxSpeed) // Drive left with negative X (left)
+                drivetrain.applyRequest(() ->
+                        GetDefaultDriveRequest()
+                        //.withVelocityX(-ThrottleLookup.GetValue(Driver.getLeftY()) * MaxSpeed) // Drive forward with negative Y (forward)
+                        //.withVelocityY(-ThrottleLookup.GetValue(Driver.getLeftX()) * MaxSpeed) // Drive left with negative X (left)
                         .withRotationalRate(DefaultDriveRotationRate()) // Drive counterclockwise with negative X (left)
                 ).ignoringDisable(true));
     }
 
     
-    
+
+
     // --------------------------------------------------------------------------------------------
     // -- Driver
     // --------------------------------------------------------------------------------------------
     private void ConfigureDriverBindings()
     {
+
+        // Slowdrive relative to bot pose
+        Driver.povUp().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityX(.5))); // Fine-tune control forwards
+        Driver.povDown().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityX(-.5))); // Fine-tune control backwards
+        Driver.povRight().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityY(-.5))); // Fine-tune control right
+        Driver.povLeft().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityY(.5))); // Fine-tune control left
+
+        Driver.povUpRight().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityX(.5).withVelocityY(-.5))); // Fine-tune control diagonally up and right
+        Driver.povUpLeft().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityX(.5).withVelocityY(.5))); // Fine-tune control diagonally up and left
+        Driver.povDownLeft().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityX(-.5).withVelocityY(.5))); // Fine-tune control diagonally down and left
+        Driver.povDownRight().whileTrue(drivetrain.applyRequest(() -> drive.withVelocityX(-.5).withVelocityY(-.5))); // Fine-tune control diagonally down and right
+
         Driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
         Driver.b().whileTrue(drivetrain.applyRequest(() -> point.withModuleDirection(new Rotation2d(-Driver.getLeftY(), -Driver.getLeftX()))));
 
@@ -202,7 +217,39 @@ public class RobotContainer
 
     }
 
-    
+    private SwerveRequest.FieldCentric GetDefaultDriveRequest()
+    {
+        double x = Driver.getLeftX();
+        double y = Driver.getLeftY();
+
+        double deflection = Math.sqrt(x * x + y * y);
+
+        double theta = Math.abs(Math.toDegrees(Math.asin(y / deflection)));
+
+        double xPercent = Math.abs(90 - theta) / 90;
+        double yPercent = Math.abs(theta) / 90;
+
+        double deflectionLut = ThrottleLookup.GetValue(deflection);
+
+        double finalX = xPercent * deflectionLut * TunerConstants.kSpeedAt12VoltsMps * (x < 0 ? -1 : 1);
+        double finalY = yPercent * deflectionLut * TunerConstants.kSpeedAt12VoltsMps * (y < 0 ? -1 : 1);
+
+        SmartDashboard.putNumber("XRaw", x);
+        SmartDashboard.putNumber("YRaw", y);
+
+        SmartDashboard.putNumber("XPercent", xPercent);
+        SmartDashboard.putNumber("YPercent", yPercent);
+
+        SmartDashboard.putNumber("Deflection", deflection);
+        SmartDashboard.putNumber("Deflectionlut", deflectionLut);
+
+        SmartDashboard.putNumber("Theta", theta);
+
+        SmartDashboard.putNumber("Xfinal", finalX);
+        SmartDashboard.putNumber("Yfinal", finalY);
+
+        return drive.withVelocityX(-finalX).withVelocityY(finalY);
+    }
 
     private double DefaultDriveRotationRate()
     {
