@@ -232,17 +232,20 @@ public class IntakeSusbsystem extends SubsystemBase {
     (Might be a better way of doing this but I can't think of anything right now)
     */
     public Command Command_intakeauto() {
-        return startEnd(
-                () -> {
-                    IntakePID.setReference(500, CANSparkBase.ControlType.kVelocity);
-                },
-                () -> {
-                    IntakePID.setReference(0, CANSparkBase.ControlType.kVelocity);
-                    IntakeMotor.stopMotor();
-                    Command_SetPivotPosition(EPivotPosition.stowed);
-                }
-        ).until(this::isPressed);
+        return Commands.sequence(
+                    startEnd(
+                    () -> {
+                        IntakePID.setReference(500, CANSparkBase.ControlType.kVelocity);
+                    },
+                    () -> {
+                        IntakePID.setReference(0, CANSparkBase.ControlType.kVelocity);
+                        IntakeMotor.stopMotor();
+                    }
+            ).until(this::isPressed),
+                Command_SetPivotPosition(EPivotPosition.stowed)
+        );
     }
+
 
     /*
         Commnad for stopping the motor, useful for if we need to stop the intake motor during auto
