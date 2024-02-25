@@ -47,12 +47,11 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     // -- Tuning Values
     // --------------------------------------------------------------------------------------------
-    private double MaxSpeed = 3.11; // 6 meters per second desired top speed
     private double MaxAngularRate = 2.0 * Math.PI; // 3/4 of a rotation per second max angular velocity
     private LookupTable ThrottleLookup = new LookupTable.Normalized()
-            .AddValue(0.1, 0.0) // deadband
-            .AddValue(0.55, 0.2)
-            .AddValue(0.8, 0.5);
+            .AddValue(0.07, 0.0) // deadband
+            .AddValue(0.55, 0.05)
+            .AddValue(0.8, 0.15);
 
     
     // --------------------------------------------------------------------------------------------
@@ -79,7 +78,7 @@ public class RobotContainer
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
     public final SwerveRequest.RobotCentric AimRobot = new SwerveRequest.RobotCentric().withSteerRequestType(SwerveModule.SteerRequestType.MotionMagicExpo);
-    private final Telemetry logger = new Telemetry(MaxSpeed);
+    private final Telemetry logger = new Telemetry(TunerConstants.kSpeedAt12VoltsMps);
 
 
 
@@ -232,11 +231,8 @@ public class RobotContainer
 
         double deflectionLut = ThrottleLookup.GetValue(deflection);
 
-
-        MaxSpeed = 0.25;
-
-        double finalX = xPercent * deflectionLut * MaxSpeed * (x < 0 ? -1 : 1);
-        double finalY = yPercent * deflectionLut * MaxSpeed * (y < 0 ? -1 : 1);
+        double finalX = xPercent * deflectionLut * TunerConstants.kSpeedAt12VoltsMps * (x < 0 ? -1 : 1);
+        double finalY = yPercent * deflectionLut * TunerConstants.kSpeedAt12VoltsMps * (y < 0 ? -1 : 1);
 
         SmartDashboard.putNumber("XRaw", x);
         SmartDashboard.putNumber("YRaw", y);
@@ -252,7 +248,7 @@ public class RobotContainer
         SmartDashboard.putNumber("Xfinal", finalX);
         SmartDashboard.putNumber("Yfinal", finalY);
 
-        return drive.withVelocityX(finalX).withVelocityY(finalY);
+        return drive.withVelocityX(-finalX).withVelocityY(finalY);
     }
 
     private double DefaultDriveRotationRate()
