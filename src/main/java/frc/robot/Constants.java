@@ -25,8 +25,11 @@ import friarLib2.utility.PIDParameters;
 public final class Constants {
 
 
-    public enum RioCanBusIDs {
-
+    public enum RioCanBusIDs
+    {
+        RoboRIO,
+        PDH,
+        IntakeMotor,
     }
 
     public enum CanivoreBusIDs {

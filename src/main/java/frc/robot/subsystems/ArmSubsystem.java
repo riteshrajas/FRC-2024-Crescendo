@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.RobotContainer;
-import friarLib2.math.FriarMath;
 
 public class ArmSubsystem extends SubsystemBase
 {
@@ -25,13 +24,13 @@ public class ArmSubsystem extends SubsystemBase
 
     public enum EArmPosition {
         stowed(0),
-        shoot_subwoofer(-1),
+        shoot_speaker(-6.9),
         shoot_podium(0), //TODO: tune when added
         shoot_wing(0), //TODO: tune when added
         climb_firstpos(0),
         climb_secondpos(0),
-        amp(-4.4),
-        trap(-10);
+        amp(-12.8),
+        trap(0);
 
         private final double Rotations;
 

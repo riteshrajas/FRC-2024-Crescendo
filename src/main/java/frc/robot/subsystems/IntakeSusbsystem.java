@@ -8,35 +8,36 @@ import com.revrobotics.*;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.Constants;
 
 import com.ctre.phoenix6.configs.*;
-import frc.robot.RobotContainer;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 //*TODO: Find acutal poses, work out motor configurations, do commmands  and logic for moving pivot
 
 
 
 public class IntakeSusbsystem extends SubsystemBase {
     public enum EPivotPosition {
-        stowed(0), // A
-        shoot_speaker(1),  // B
-        intake(0),
-        amp(0),
+        Stowed(0),
+        Intake(19.27),
+        Shoot_speaker(8.85),
+        amp(33),
         trap(0);
 
-        private final int Rotations;
+        private final double Rotations;
 
-        EPivotPosition(int rotations) {
+        EPivotPosition(double rotations) {
             Rotations = rotations;
         }
     }
 
     public enum EOutakeType {
-        amp(0),
+        amp(3000),
         speaker(0),
         trap(0);
 
@@ -48,12 +49,13 @@ public class IntakeSusbsystem extends SubsystemBase {
     }
 
     private static final boolean TunePID = false;
-    private static final double PivotTolerance = 10.0 / 360.0;
+    private static final double PivotTolerance = 15.0 / 360.0;
+    private static final double TEMP_IntakeVoltage = -7;
 
     private Timer rumbleTimer = new Timer();
     private Timer autoOuttakeTimer = new Timer();
 
-    private TalonFX PivotMotor = new TalonFX(Constants.CanivoreBusIDs.IntakePivot.GetID());
+    private TalonFX PivotMotor;
 
     private SparkPIDController IntakePID;
     private CANSparkFlex IntakeMotor;
@@ -78,17 +80,18 @@ public class IntakeSusbsystem extends SubsystemBase {
 
     public IntakeSusbsystem() {
         InitializeConfigs();
-        PivotMotor = CreateMotor(Constants.Intake.PIVOT_MOTOR_ID);
-        IntakeMotor = CreateSparkMotor(23);
+        PivotMotor = CreateMotor(Constants.CanivoreBusIDs.IntakePivot.GetID());
+
+        IntakeMotor = CreateSparkMotor(Constants.RioCanBusIDs.IntakeMotor.ordinal());
         IntakePID = CreatePID(IntakeMotor);
         IntakeEncoder = IntakeMotor.getEncoder();
-        MotionMagicRequest.Slot = 1;
         IntakeMotor.burnFlash();
         VexLimitSwitch = new DigitalInput(0);
 
         ApplyConfigs();
         PublishConfigs();
 
+        PivotMotor.setControl(MotionMagicRequest.withPosition(EPivotPosition.Stowed.Rotations));
     }
 
     private void InitializeConfigs() {
@@ -143,9 +146,9 @@ public class IntakeSusbsystem extends SubsystemBase {
     private SparkPIDController CreatePID(CANSparkFlex motor) {
         var pid = motor.getPIDController();
 
-        pid.setP(0.000325);
-        pid.setI(0.0000001);
-        pid.setD(0.01357);
+        pid.setP(0.0007);
+        pid.setI(0.0000000);
+        pid.setD(0.023);
         pid.setIZone(0);
         pid.setFF(0.000015);
         pid.setOutputRange(-1, 1);
@@ -159,148 +162,88 @@ public class IntakeSusbsystem extends SubsystemBase {
         return pid;
     }
 
-    private boolean isPressed() {
-        return VexLimitSwitch.get();
-    }
-
     /*
     Command for setting the pivot of the intake using motion magic foc
     */
     public Command Command_SetPivotPosition(EPivotPosition position) { //Controls the pivot of the intake
         return run(() ->
         {
-            SmartDashboard.putNumber("Pivot Target", position.Rotations);
+            SmartDashboard.putNumber("Intake.PivotTarget", position.Rotations);
 
             PivotMotor.setControl(MotionMagicRequest.withPosition(position.Rotations));
         })
-                .until(() ->
-                {
-                    double actualRotation = PivotMotor.getPosition().getValue();
-                    return MathUtil.isNear(position.Rotations, actualRotation, PivotTolerance);
-                })
-                .andThen(() -> System.out.println("Pivot has reached it's target!"));
-    }
-
-    /**
-     * Command for intaking the note, will stop intake if limit switch is pressed or trigger is released
-     **/
-    public Command Command_IntakeNote() {
-        //TODO: check for limit switch
-        return
-                startEnd(
-                        () -> {
-                            IntakePID.setReference(2000, CANSparkBase.ControlType.kVelocity);
-                        },
-                        () -> {
-                            IntakePID.setReference(0, CANSparkBase.ControlType.kVelocity);
-                            IntakeMotor.stopMotor();
-
-
-                        }
-                )
-                .until(this::isPressed)
-                .andThen(Command_SetPivotPosition(EPivotPosition.stowed));
-    }
-
-    /*
-    Command for controlling the rumble of the controller for 75 milliseconds
-    */
-//    public Command Command_Rumble() {
-//        return startEnd(
-//                () -> {
-//                    rumbleTimer.start();
-//                    System.out.println("Rumblin");
-//                    RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
-//                },
-//                () -> {
-//                    RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
-//                    rumbleTimer.stop();
-//                    rumbleTimer.reset();
-//                }
-//        )
-//                .until(() -> rumbleTimer.hasElapsed(0.75));
-//    }
-
-    /*
-    Command for intaking during auto, takes into account only the limit switch and not the controller
-    (Might be a better way of doing this but I can't think of anything right now)
-    */
-    public Command Command_intakeauto() {
-        return Commands.sequence(
-                    startEnd(
-                    () -> {
-                        IntakePID.setReference(500, CANSparkBase.ControlType.kVelocity);
-                    },
-                    () -> {
-                        IntakePID.setReference(0, CANSparkBase.ControlType.kVelocity);
-                        IntakeMotor.stopMotor();
-                    }
-            ).until(this::isPressed),
-                Command_SetPivotPosition(EPivotPosition.stowed)
-        );
+        .until(() ->
+        {
+            double actualRotation = PivotMotor.getPosition().getValue();
+            return MathUtil.isNear(position.Rotations, actualRotation, PivotTolerance);
+        })
+        .andThen(() -> System.out.println("Pivot has reached it's target!"));
     }
 
 
-    /*
-        Commnad for stopping the motor, useful for if we need to stop the intake motor during auto
-    */
-    public Command Command_stopMotor() //use this in auto just incase we miss a note note
+    public Command Command_PreIntakeSpinUp()
     {
-        return runOnce(() ->
-        {
-            IntakePID.setReference(0, CANSparkBase.ControlType.kVelocity);
-            IntakeMotor.stopMotor();
-
-        });
-    }
-
-    /*
-    Command for a quick test of the intake for pid tuning
-    */
-    public Command Command_testInake(double speed) {
-
-        return run(() ->
-        {
-            SmartDashboard.putNumber("Target Velocity", speed);
-            if (speed == 600) {
-                IntakePID.setReference(speed, CANSparkBase.ControlType.kVelocity);
-            } else {
-                IntakeMotor.stopMotor();
-            }
-        });
-    }
-
-    /*
-    Command for outtaking the note into scoring location, will end when trigger is released
-    */
-    public Command Command_scoreSpeaker() {
+        // TODO: This should be a startEnd command that stops the motor when it finishes in case the command gets interrupted,
+        //       but we can't do that right now due to how the intake and arm subsystems are divided up. Until then we'll just
+        //       spin up the wheels and rely on the invoking command sequence to stop the intake.
         return
-                startEnd(
-                        () -> {
-                            IntakePID.setReference(EOutakeType.speaker.RPM, CANSparkBase.ControlType.kVelocity);
-                        },
-                        () ->
-                        {
-                            IntakePID.setReference(0, CANSparkBase.ControlType.kVelocity);
-                            IntakeMotor.stopMotor();
-                        }
-                ).until(() -> RobotContainer.Driver.getLeftTriggerAxis() < 0.5);
+            runOnce( () -> IntakePID.setReference(TEMP_IntakeVoltage, CANSparkBase.ControlType.kVoltage) );
     }
 
-    public Command Command_scoreAmp()
+    public Command Command_IntakeNote()
+    {
+        AtomicReference<Double> lastCurrent = new AtomicReference<>((double) 0);
+        AtomicInteger currentSpikeCount = new AtomicInteger();
+
+        return
+            startEnd
+            (
+                () ->
+                {
+                    currentSpikeCount.set(0);
+                    lastCurrent.set(IntakeMotor.getOutputCurrent());
+
+                    //SmartDashboard.putNumber("Intake.TargetVelocity", 2000);
+                    //IntakePID.setReference(2000, CANSparkBase.ControlType.kVelocity);
+                    IntakePID.setReference(TEMP_IntakeVoltage, CANSparkBase.ControlType.kVoltage);
+                },
+                () -> IntakeMotor.stopMotor()
+            )
+            .until(() ->
+            {
+                SmartDashboard.putNumber("Intake.CurrentSpikeCount", currentSpikeCount.get());
+
+                double curCurrent = IntakeMotor.getOutputCurrent();
+                if (curCurrent - lastCurrent.get() > 20)
+                {
+                    currentSpikeCount.getAndIncrement();
+                }
+
+                lastCurrent.set(curCurrent);
+                return currentSpikeCount.get() >= 2;
+            });
+    }
+
+
+    public Command Command_Outtake(EOutakeType outtakeType)
     {
         return startEnd(
                 () ->
                 {
-                    IntakePID.setReference(EOutakeType.amp.RPM, CANSparkBase.ControlType.kVelocity);
+                    //SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPM);
+                    //IntakePID.setReference(outtakeType.RPM, CANSparkBase.ControlType.kVelocity);
+                    IntakePID.setReference(12, CANSparkBase.ControlType.kVoltage);
                 },
-                () ->
-                {
-                    IntakePID.setReference(0, CANSparkBase.ControlType.kVelocity);
-                    IntakeMotor.stopMotor();
-                }
-        ).until(() -> RobotContainer.Driver.getHID().getLeftBumperReleased());
+                () -> IntakeMotor.stopMotor()
+        );
     }
+
+
+    public Command Command_StopIntake() //use this in auto just incase we miss a note note
+    {
+        return runOnce(() -> IntakeMotor.stopMotor());
+    }
+
 
     /*
     Command for outtaking a note into a scoring location during auto, take in account
@@ -333,10 +276,12 @@ public class IntakeSusbsystem extends SubsystemBase {
         return runOnce(() -> PivotMotor.setPosition(0));
     }
 
-    public void periodic() {
-        SmartDashboard.putNumber("pivot Position", PivotMotor.getPosition().getValue());
-        SmartDashboard.putNumber("Actual Velocity", IntakeEncoder.getVelocity());
-        SmartDashboard.putBoolean("is limit switched pressed", isPressed());
+    public void periodic()
+    {
+        SmartDashboard.putNumber("Intake.PivotPosition", PivotMotor.getPosition().getValue());
+        SmartDashboard.putNumber("Intake.ActualVelocity", IntakeEncoder.getVelocity());
+        SmartDashboard.putNumber("Intake.ActualCurrent", IntakeMotor.getOutputCurrent());
+
         UpdateConfigs();
     }
 
@@ -344,66 +289,89 @@ public class IntakeSusbsystem extends SubsystemBase {
     {
         if (!TunePID) { return; }
 
-        SmartDashboard.putNumber("Pivot.Target", 0);
-        SmartDashboard.putNumber("Pivot.Position", 0);
-        SmartDashboard.putNumber("Pivot.Error", 0);
+//        SmartDashboard.putNumber("Intake.Configs.P", IntakePID.getP());
+//        SmartDashboard.putNumber("Intake.Configs.I", IntakePID.getI());
+//        SmartDashboard.putNumber("Intake.Configs.D", IntakePID.getD());
 
-        SmartDashboard.putNumber("Pivot.Configs.P", TalonConfigs_Slot0.kP);
-        SmartDashboard.putNumber("Pivot.Configs.I", TalonConfigs_Slot0.kI);
-        SmartDashboard.putNumber("Pivot.Configs.D", TalonConfigs_Slot0.kD);
-
-        SmartDashboard.putNumber("Pivot.Configs.S", TalonConfigs_Slot0.kS);
-        SmartDashboard.putNumber("Pivot.Configs.A", TalonConfigs_Slot0.kA);
-        SmartDashboard.putNumber("Pivot.Configs.V", TalonConfigs_Slot0.kV);
-        SmartDashboard.putNumber("Pivot.Configs.G", TalonConfigs_Slot0.kG);
-
-        SmartDashboard.putNumber("Pivot.Configs.MMCruise", TalonConfigs_MotionMagic.MotionMagicCruiseVelocity);
-        SmartDashboard.putNumber("Pivot.Configs.MMAccel", TalonConfigs_MotionMagic.MotionMagicAcceleration);
-        SmartDashboard.putNumber("Pivot.Configs.MMJerk", TalonConfigs_MotionMagic.MotionMagicJerk);
-        SmartDashboard.putNumber("Pivot.Configs.MMExpoA", TalonConfigs_MotionMagic.MotionMagicExpo_kA);
-        SmartDashboard.putNumber("Pivot.Configs.MMExpoV", TalonConfigs_MotionMagic.MotionMagicExpo_kV);
+//        SmartDashboard.putNumber("Pivot.Target", 0);
+//        SmartDashboard.putNumber("Pivot.Position", 0);
+//        SmartDashboard.putNumber("Pivot.Error", 0);
+//
+//        SmartDashboard.putNumber("Pivot.Configs.P", TalonConfigs_Slot0.kP);
+//        SmartDashboard.putNumber("Pivot.Configs.I", TalonConfigs_Slot0.kI);
+//        SmartDashboard.putNumber("Pivot.Configs.D", TalonConfigs_Slot0.kD);
+//
+//        SmartDashboard.putNumber("Pivot.Configs.S", TalonConfigs_Slot0.kS);
+//        SmartDashboard.putNumber("Pivot.Configs.A", TalonConfigs_Slot0.kA);
+//        SmartDashboard.putNumber("Pivot.Configs.V", TalonConfigs_Slot0.kV);
+//        SmartDashboard.putNumber("Pivot.Configs.G", TalonConfigs_Slot0.kG);
+//
+//        SmartDashboard.putNumber("Pivot.Configs.MMCruise", TalonConfigs_MotionMagic.MotionMagicCruiseVelocity);
+//        SmartDashboard.putNumber("Pivot.Configs.MMAccel", TalonConfigs_MotionMagic.MotionMagicAcceleration);
+//        SmartDashboard.putNumber("Pivot.Configs.MMJerk", TalonConfigs_MotionMagic.MotionMagicJerk);
+//        SmartDashboard.putNumber("Pivot.Configs.MMExpoA", TalonConfigs_MotionMagic.MotionMagicExpo_kA);
+//        SmartDashboard.putNumber("Pivot.Configs.MMExpoV", TalonConfigs_MotionMagic.MotionMagicExpo_kV);
     }
 
     private void UpdateConfigs()
     {
         if (!TunePID) { return; }
 
-        var dirty = false;
+        // -- Intake
+//        var intakeDirty = false;
+//        var intakeP = SmartDashboard.getNumber("Intake.Configs.P", IntakePID.getP());
+//        var intakeI = SmartDashboard.getNumber("Intake.Configs.I", IntakePID.getI());
+//        var intakeD = SmartDashboard.getNumber("Intake.Configs.D", IntakePID.getD());
+//
+//        if (intakeP != IntakePID.getP()) { IntakePID.setP(intakeP); intakeDirty = true; System.out.println("Set P"); }
+//        if (intakeI != IntakePID.getI()) { IntakePID.setI(intakeI); intakeDirty = true; System.out.println("Set I"); }
+//        if (intakeD != IntakePID.getD()) { IntakePID.setD(intakeD); intakeDirty = true; System.out.println("Set D"); }
+//
+//        if (intakeDirty)
+//        {
+//            IntakeMotor.burnFlash();
+//        }
 
-        var p = SmartDashboard.getNumber("Pivot.Configs.P", TalonConfigs_Slot0.kP);
-        var i = SmartDashboard.getNumber("Pivot.Configs.I", TalonConfigs_Slot0.kI);
-        var d = SmartDashboard.getNumber("Pivot.Configs.D", TalonConfigs_Slot0.kD);
-
-        var s = SmartDashboard.getNumber("Pivot.Configs.S", TalonConfigs_Slot0.kS);
-        var a = SmartDashboard.getNumber("Pivot.Configs.A", TalonConfigs_Slot0.kA);
-        var v = SmartDashboard.getNumber("Pivot.Configs.V", TalonConfigs_Slot0.kV);
-        var g = SmartDashboard.getNumber("Pivot.Configs.G", TalonConfigs_Slot0.kG);
-
-        var mmA = SmartDashboard.getNumber("Pivot.Configs.MMAccel", TalonConfigs_MotionMagic.MotionMagicAcceleration);
-        var mmC = SmartDashboard.getNumber("Pivot.Configs.MMCruise", TalonConfigs_MotionMagic.MotionMagicCruiseVelocity);
-        var mmJ = SmartDashboard.getNumber("Pivot.Configs.MMJerk", TalonConfigs_MotionMagic.MotionMagicJerk);
-        var mmEA = SmartDashboard.getNumber("Pivot.Configs.mmExpoA", TalonConfigs_MotionMagic.MotionMagicExpo_kA);
-        var mmEV = SmartDashboard.getNumber("Pivot.Configs.mmExpoV", TalonConfigs_MotionMagic.MotionMagicExpo_kV);
-
-        if (p != TalonConfigs_Slot0.kP) { TalonConfigs_Slot0.kP = p; dirty = true; }
-        if (i != TalonConfigs_Slot0.kI) { TalonConfigs_Slot0.kI = i; dirty = true; }
-        if (d != TalonConfigs_Slot0.kD) { TalonConfigs_Slot0.kD = d; dirty = true; }
-
-        if (s != TalonConfigs_Slot0.kS) { TalonConfigs_Slot0.kS = s; dirty = true; }
-        if (a != TalonConfigs_Slot0.kA) { TalonConfigs_Slot0.kA = a; dirty = true; }
-        if (v != TalonConfigs_Slot0.kV) { TalonConfigs_Slot0.kV = v; dirty = true; }
-        if (g != TalonConfigs_Slot0.kG) { TalonConfigs_Slot0.kG = g; dirty = true; }
-
-        if (mmC != TalonConfigs_MotionMagic.MotionMagicCruiseVelocity) { TalonConfigs_MotionMagic.MotionMagicCruiseVelocity = mmC; dirty = true; }
-        if (mmA != TalonConfigs_MotionMagic.MotionMagicAcceleration) { TalonConfigs_MotionMagic.MotionMagicAcceleration = mmA; dirty = true; }
-        if (mmJ != TalonConfigs_MotionMagic.MotionMagicJerk) { TalonConfigs_MotionMagic.MotionMagicJerk = mmJ; dirty = true; }
-        if (mmEA != TalonConfigs_MotionMagic.MotionMagicExpo_kA) { TalonConfigs_MotionMagic.MotionMagicExpo_kA = mmEA; dirty = true; }
-        if (mmEV != TalonConfigs_MotionMagic.MotionMagicExpo_kV) { TalonConfigs_MotionMagic.MotionMagicExpo_kV = mmEV; dirty = true; }
-
-        if (dirty)
-        {
-            ApplyConfigs();
-        }
+        // -- Pivot
+//        var pivotDirty = false;
+//
+//        var p = SmartDashboard.getNumber("Pivot.Configs.P", TalonConfigs_Slot0.kP);
+//        var i = SmartDashboard.getNumber("Pivot.Configs.I", TalonConfigs_Slot0.kI);
+//        var d = SmartDashboard.getNumber("Pivot.Configs.D", TalonConfigs_Slot0.kD);
+//
+//        var s = SmartDashboard.getNumber("Pivot.Configs.S", TalonConfigs_Slot0.kS);
+//        var a = SmartDashboard.getNumber("Pivot.Configs.A", TalonConfigs_Slot0.kA);
+//        var v = SmartDashboard.getNumber("Pivot.Configs.V", TalonConfigs_Slot0.kV);
+//        var g = SmartDashboard.getNumber("Pivot.Configs.G", TalonConfigs_Slot0.kG);
+//
+//        var mmA = SmartDashboard.getNumber("Pivot.Configs.MMAccel", TalonConfigs_MotionMagic.MotionMagicAcceleration);
+//        var mmC = SmartDashboard.getNumber("Pivot.Configs.MMCruise", TalonConfigs_MotionMagic.MotionMagicCruiseVelocity);
+//        var mmJ = SmartDashboard.getNumber("Pivot.Configs.MMJerk", TalonConfigs_MotionMagic.MotionMagicJerk);
+//        var mmEA = SmartDashboard.getNumber("Pivot.Configs.mmExpoA", TalonConfigs_MotionMagic.MotionMagicExpo_kA);
+//        var mmEV = SmartDashboard.getNumber("Pivot.Configs.mmExpoV", TalonConfigs_MotionMagic.MotionMagicExpo_kV);
+//
+//
+//
+//        if (p != TalonConfigs_Slot0.kP) { TalonConfigs_Slot0.kP = p; pivotDirty = true; }
+//        if (i != TalonConfigs_Slot0.kI) { TalonConfigs_Slot0.kI = i; pivotDirty = true; }
+//        if (d != TalonConfigs_Slot0.kD) { TalonConfigs_Slot0.kD = d; pivotDirty = true; }
+//
+//        if (s != TalonConfigs_Slot0.kS) { TalonConfigs_Slot0.kS = s; pivotDirty = true; }
+//        if (a != TalonConfigs_Slot0.kA) { TalonConfigs_Slot0.kA = a; pivotDirty = true; }
+//        if (v != TalonConfigs_Slot0.kV) { TalonConfigs_Slot0.kV = v; pivotDirty = true; }
+//        if (g != TalonConfigs_Slot0.kG) { TalonConfigs_Slot0.kG = g; pivotDirty = true; }
+//
+//        if (mmC != TalonConfigs_MotionMagic.MotionMagicCruiseVelocity) { TalonConfigs_MotionMagic.MotionMagicCruiseVelocity = mmC; pivotDirty = true; }
+//        if (mmA != TalonConfigs_MotionMagic.MotionMagicAcceleration) { TalonConfigs_MotionMagic.MotionMagicAcceleration = mmA; pivotDirty = true; }
+//        if (mmJ != TalonConfigs_MotionMagic.MotionMagicJerk) { TalonConfigs_MotionMagic.MotionMagicJerk = mmJ; pivotDirty = true; }
+//        if (mmEA != TalonConfigs_MotionMagic.MotionMagicExpo_kA) { TalonConfigs_MotionMagic.MotionMagicExpo_kA = mmEA; pivotDirty = true; }
+//        if (mmEV != TalonConfigs_MotionMagic.MotionMagicExpo_kV) { TalonConfigs_MotionMagic.MotionMagicExpo_kV = mmEV; pivotDirty = true; }
+//
+//
+//        if (pivotDirty)
+//        {
+//            ApplyConfigs();
+//        }
     }
 }
 
