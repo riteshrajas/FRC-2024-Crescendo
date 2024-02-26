@@ -12,6 +12,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.RobotContainer;
+import friarLib2.math.FriarMath;
 
 public class ArmSubsystem extends SubsystemBase
 {
@@ -19,19 +21,21 @@ public class ArmSubsystem extends SubsystemBase
     private static final boolean TunePID = false;
     private static final double ArmTolerance = 10.0 / 360.0;
 
+    private double ManualArmControlTarget = 0;
+
     public enum EArmPosition {
         stowed(0),
-        shoot_subwoofer(1),
+        shoot_subwoofer(-1),
         shoot_podium(0), //TODO: tune when added
-        shoot_wing(2), //TODO: tune when added
-        climb_firstpos(10),
+        shoot_wing(0), //TODO: tune when added
+        climb_firstpos(0),
         climb_secondpos(0),
-        amp(2),
-        trap(5);
+        amp(-4.4),
+        trap(-10);
 
-        private final int Rotations;
+        private final double Rotations;
 
-        EArmPosition(int rotations) {
+        EArmPosition(double rotations) {
             Rotations = rotations;
         }
     }
@@ -61,10 +65,11 @@ public class ArmSubsystem extends SubsystemBase
 
         LeftMotor = CreateMotor(Constants.CanivoreBusIDs.ArmLeft.GetID());
 
+
         if (EnableRightMotor)
         {
-            RightMotor = CreateMotor(Constants.CanivoreBusIDs.ArmLeft.GetID());
-            RightMotor.setControl(new Follower(Constants.CanivoreBusIDs.ArmRight.GetID(), true));
+            RightMotor = CreateMotor(Constants.CanivoreBusIDs.ArmRight.GetID());
+            RightMotor.setControl(new Follower(Constants.CanivoreBusIDs.ArmLeft.GetID(), true));
         }
 
         ApplyConfigs();
@@ -142,11 +147,28 @@ public class ArmSubsystem extends SubsystemBase
        return runOnce(() -> LeftMotor.setPosition(0));
     }
 
+    public Command ManualArmControl()
+    {
+        return runOnce(() -> ManualArmControlTarget = LeftMotor.getPosition().getValue())
+                .andThen(run(() ->
+                {
+                    double y = RobotContainer.Operator.getLeftY() * 0.1;
+                    if (Math.abs(y) < 0.1) { return; }
+
+                    ManualArmControlTarget = MathUtil.clamp(ManualArmControlTarget + y, -13, 0);
+                    LeftMotor.setControl(MotionMagicRequest.withPosition(ManualArmControlTarget));
+                }));
+    }
 
     @Override
     public void periodic()
     {
-        SmartDashboard.putNumber("Arm.Position", LeftMotor.getPosition().getValue());
+        SmartDashboard.putNumber("Arm.PositionL", LeftMotor.getPosition().getValue());
+        if (EnableRightMotor)
+        {
+            SmartDashboard.putNumber("Arm.PositionR", RightMotor.getPosition().getValue());
+        }
+
         UpdateConfigs();
     }
 

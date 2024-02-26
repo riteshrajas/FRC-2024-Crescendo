@@ -172,9 +172,9 @@ public class RobotContainer
         // reset the field-centric heading on left bumper press
         Driver.y().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
 
-        Driver.rightTrigger().whileTrue(
-                Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)
-                .andThen(Intake.Command_IntakeNote()));
+//        Driver.rightTrigger().whileTrue(
+//                Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)
+//                .andThen(Intake.Command_IntakeNote()));
 
         Driver.x().onTrue(Commands.run(() -> RotationModeIsRobotCentric = !RotationModeIsRobotCentric));
     }
@@ -188,10 +188,12 @@ public class RobotContainer
     {
 
         // -- Testing arm code
-        Operator.a().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)); //stowed
-        Operator.b().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer)); //shot speaker
-        Operator.x().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp)); //amp
-        Operator.y().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap)); //trap
+        Operator.a().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed));
+        Operator.b().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer));
+        Operator.x().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp));
+        Operator.y().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap));
+        Operator.back().whileTrue(Arm.ManualArmControl());
+
 
         
         // -- Intaking
