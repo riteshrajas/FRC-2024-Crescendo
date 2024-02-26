@@ -33,7 +33,23 @@ public final class Constants {
         ArmLeft,
         ArmRight,
         IntakePivot,
+        Drive_BL,
+        Drive_BR,
+        Drive_FL,
+        Drive_FR,
+        Steer_BL,
+        Steer_BR,
+        Steer_FL,
+        Steer_FR,
+        CanCoder_BL,
+        CanCoder_BR,
+        CanCoder_FL,
+        CanCoder_FR,
+        Pigeon
+
         ;
+
+        static public final String BusName = "CANivore";
 
         public int GetID() {
             return ordinal() + 1;

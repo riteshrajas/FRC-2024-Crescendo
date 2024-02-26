@@ -15,7 +15,7 @@ import frc.robot.Constants;
 
 public class ArmSubsystem extends SubsystemBase
 {
-    private static final boolean EnableRightMotor = false;
+    private static final boolean EnableRightMotor = true;
     private static final boolean TunePID = false;
     private static final double ArmTolerance = 10.0 / 360.0;
 
@@ -64,7 +64,7 @@ public class ArmSubsystem extends SubsystemBase
         if (EnableRightMotor)
         {
             RightMotor = CreateMotor(Constants.CanivoreBusIDs.ArmLeft.GetID());
-            RightMotor.setControl(new Follower(Constants.CanivoreBusIDs.ArmLeft.GetID(), true));
+            RightMotor.setControl(new Follower(Constants.CanivoreBusIDs.ArmRight.GetID(), true));
         }
 
         ApplyConfigs();
@@ -99,7 +99,7 @@ public class ArmSubsystem extends SubsystemBase
 
     private TalonFX CreateMotor(int deviceID)
     {
-        var motor = new TalonFX(deviceID, "Canivore");
+        var motor = new TalonFX(deviceID, Constants.CanivoreBusIDs.BusName);
         motor.setPosition(0);
         return motor;
     }

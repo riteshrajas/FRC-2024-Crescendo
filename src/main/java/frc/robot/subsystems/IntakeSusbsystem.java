@@ -48,12 +48,12 @@ public class IntakeSusbsystem extends SubsystemBase {
     }
 
     private static final boolean TunePID = false;
-    private static final double ArmTolerance = 10.0 / 360.0;
+    private static final double PivotTolerance = 10.0 / 360.0;
 
     private Timer rumbleTimer = new Timer();
     private Timer autoOuttakeTimer = new Timer();
 
-    private TalonFX PivotMotor = new TalonFX(Constants.Intake.PIVOT_MOTOR_ID);
+    private TalonFX PivotMotor = new TalonFX(Constants.CanivoreBusIDs.IntakePivot.GetID());
 
     private SparkPIDController IntakePID;
     private CANSparkFlex IntakeMotor;
@@ -117,7 +117,7 @@ public class IntakeSusbsystem extends SubsystemBase {
     }
 
     private TalonFX CreateMotor(int deviceID) {
-        var motor = new TalonFX(deviceID, "Canivore");
+        var motor = new TalonFX(deviceID, Constants.CanivoreBusIDs.BusName);
         motor.setPosition(0);
         return motor;
     }
@@ -176,7 +176,7 @@ public class IntakeSusbsystem extends SubsystemBase {
                 .until(() ->
                 {
                     double actualRotation = PivotMotor.getPosition().getValue();
-                    return MathUtil.isNear(position.Rotations, actualRotation, ArmTolerance);
+                    return MathUtil.isNear(position.Rotations, actualRotation, PivotTolerance);
                 })
                 .andThen(() -> System.out.println("Pivot has reached it's target!"));
     }
@@ -185,8 +185,8 @@ public class IntakeSusbsystem extends SubsystemBase {
      * Command for intaking the note, will stop intake if limit switch is pressed or trigger is released
      **/
     public Command Command_IntakeNote() {
+        //TODO: check for limit switch
         return
-                Commands.sequence(
                 startEnd(
                         () -> {
                             IntakePID.setReference(2000, CANSparkBase.ControlType.kVelocity);
@@ -198,34 +198,28 @@ public class IntakeSusbsystem extends SubsystemBase {
 
                         }
                 )
-                        .until(() ->
-                        {
-                            //TODO: check for limit switch
-                            return isPressed() || RobotContainer.Driver.getRightTriggerAxis() < 0.5;
-                        }),
-                Command_Rumble().alongWith(Command_SetPivotPosition(EPivotPosition.stowed))
-
-        );
+                .until(this::isPressed)
+                .andThen(Command_SetPivotPosition(EPivotPosition.stowed));
     }
 
     /*
     Command for controlling the rumble of the controller for 75 milliseconds
     */
-    public Command Command_Rumble() {
-        return startEnd(
-                () -> {
-                    rumbleTimer.start();
-                    System.out.println("Rumblin");
-                    RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
-                },
-                () -> {
-                    RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
-                    rumbleTimer.stop();
-                    rumbleTimer.reset();
-                }
-        )
-                .until(() -> rumbleTimer.hasElapsed(0.75));
-    }
+//    public Command Command_Rumble() {
+//        return startEnd(
+//                () -> {
+//                    rumbleTimer.start();
+//                    System.out.println("Rumblin");
+//                    RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
+//                },
+//                () -> {
+//                    RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
+//                    rumbleTimer.stop();
+//                    rumbleTimer.reset();
+//                }
+//        )
+//                .until(() -> rumbleTimer.hasElapsed(0.75));
+//    }
 
     /*
     Command for intaking during auto, takes into account only the limit switch and not the controller

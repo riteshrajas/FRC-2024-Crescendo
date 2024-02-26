@@ -75,6 +75,8 @@ public class RobotContainer
     // -- Drive requests
     // --------------------------------------------------------------------------------------------
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric().withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage);
+
+    private final SwerveRequest.FieldCentricFacingAngle driveTowardsAngle = new SwerveRequest.FieldCentricFacingAngle().withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage);
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
     public final SwerveRequest.RobotCentric AimRobot = new SwerveRequest.RobotCentric().withSteerRequestType(SwerveModule.SteerRequestType.MotionMagicExpo);
@@ -86,6 +88,11 @@ public class RobotContainer
     // -- Auto Chooser
     // --------------------------------------------------------------------------------------------
     private final SendableChooser<Command> autoChooser;
+
+    // --------------------------------------------------------------------------------------------
+    // -- State
+    // --------------------------------------------------------------------------------------------
+    private boolean RotationModeIsRobotCentric = true;
 
 
     public RobotContainer()
@@ -165,8 +172,11 @@ public class RobotContainer
         // reset the field-centric heading on left bumper press
         Driver.y().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
 
-        Driver.povUp().onTrue(Intake.Command_testInake(600));
-        Driver.povUp().onFalse(Intake.Command_testInake(0));
+        Driver.rightTrigger().whileTrue(
+                Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)
+                .andThen(Intake.Command_IntakeNote()));
+
+        Driver.x().onTrue(Commands.run(() -> RotationModeIsRobotCentric = !RotationModeIsRobotCentric));
     }
     
     
@@ -219,6 +229,7 @@ public class RobotContainer
 
     private SwerveRequest.FieldCentric GetDefaultDriveRequest()
     {
+
         double x = Driver.getLeftX();
         double y = Driver.getLeftY();
 
@@ -248,7 +259,14 @@ public class RobotContainer
         SmartDashboard.putNumber("Xfinal", finalX);
         SmartDashboard.putNumber("Yfinal", finalY);
 
-        return drive.withVelocityX(-finalX).withVelocityY(finalY);
+        //if (RotationModeIsRobotCentric)
+        {
+            return drive.withVelocityX(-finalX).withVelocityY(finalY);
+        }
+        //else
+        //{
+        //    return driveTowardsAngle.withVelocityX(-finalX).withVelocityY(finalY);
+        //}
     }
 
     private double DefaultDriveRotationRate()

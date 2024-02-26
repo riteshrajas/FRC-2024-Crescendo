@@ -8,6 +8,7 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.ClosedLoopOutputType;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstants.SteerFeedbackType;
 
 import edu.wpi.first.math.util.Units;
+import frc.robot.Constants;
 import frc.robot.subsystems.SwerveSubsystem;
 
 public class TunerConstants {
@@ -52,8 +53,8 @@ public class TunerConstants {
     private static final boolean kInvertLeftSide = false;
     private static final boolean kInvertRightSide = true;
 
-    private static final String kCANbusName = ""; // put CANIVORE in the string if using CANIVORE
-    private static final int kPigeonId = 13;
+    private static final String kCANbusName = Constants.CanivoreBusIDs.BusName;
+    private static final int kPigeonId = Constants.CanivoreBusIDs.Pigeon.GetID();
 
 
     // These are only used for simulation
@@ -87,36 +88,36 @@ public class TunerConstants {
 
 
     // Front Left
-    private static final int kFrontLeftDriveMotorId = 11;
-    private static final int kFrontLeftSteerMotorId = 12;
-    private static final int kFrontLeftEncoderId = 10;
+    private static final int kFrontLeftDriveMotorId = Constants.CanivoreBusIDs.Drive_FL.GetID();
+    private static final int kFrontLeftSteerMotorId = Constants.CanivoreBusIDs.Steer_FL.GetID();
+    private static final int kFrontLeftEncoderId = Constants.CanivoreBusIDs.CanCoder_FL.GetID();
     private static final double kFrontLeftEncoderOffset = 0.446533203125;
 
     private static final double kFrontLeftXPosInches = 13.625;
     private static final double kFrontLeftYPosInches = 9.375;
 
     // Front Right
-    private static final int kFrontRightDriveMotorId = 8;
-    private static final int kFrontRightSteerMotorId = 9;
-    private static final int kFrontRightEncoderId = 7;
+    private static final int kFrontRightDriveMotorId = Constants.CanivoreBusIDs.Drive_FR.GetID();
+    private static final int kFrontRightSteerMotorId = Constants.CanivoreBusIDs.Steer_FR.GetID();
+    private static final int kFrontRightEncoderId = Constants.CanivoreBusIDs.CanCoder_FR.GetID();
     private static final double kFrontRightEncoderOffset = -0.206298828125;
 
     private static final double kFrontRightXPosInches = 13.625;
     private static final double kFrontRightYPosInches = -9.375;
 
     // Back Left
-    private static final int kBackLeftDriveMotorId = 2;
-    private static final int kBackLeftSteerMotorId = 3;
-    private static final int kBackLeftEncoderId = 1;
+    private static final int kBackLeftDriveMotorId = Constants.CanivoreBusIDs.Drive_BL.GetID();
+    private static final int kBackLeftSteerMotorId = Constants.CanivoreBusIDs.Steer_BL.GetID();
+    private static final int kBackLeftEncoderId = Constants.CanivoreBusIDs.CanCoder_BL.GetID();
     private static final double kBackLeftEncoderOffset = 0.0537109375;
 
     private static final double kBackLeftXPosInches = -13.625;
     private static final double kBackLeftYPosInches = 9.375;
 
     // Back Right
-    private static final int kBackRightDriveMotorId = 5;
-    private static final int kBackRightSteerMotorId = 6;
-    private static final int kBackRightEncoderId = 4;
+    private static final int kBackRightDriveMotorId = Constants.CanivoreBusIDs.Drive_BR.GetID();
+    private static final int kBackRightSteerMotorId = Constants.CanivoreBusIDs.Steer_BR.GetID();
+    private static final int kBackRightEncoderId = Constants.CanivoreBusIDs.CanCoder_BR.GetID();
     private static final double kBackRightEncoderOffset = 0.364990234375;
 
     private static final double kBackRightXPosInches = -13.625;
