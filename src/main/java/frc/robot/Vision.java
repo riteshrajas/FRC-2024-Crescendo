@@ -19,6 +19,13 @@ public class Vision
     static private boolean ResultsAreStale = true;
     static private LimelightHelpers.Results LatestResults = null;
 
+    //public enum Position
+    //{
+        //Source,
+        //Speaker,
+        //Amp
+    //}
+
     static public void Periodic()
     {
         ResultsAreStale = true;

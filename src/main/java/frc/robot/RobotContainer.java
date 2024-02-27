@@ -64,7 +64,7 @@ public class RobotContainer
     public final SwerveSubsystem drivetrain = TunerConstants.DriveTrain;
     private final ArmSubsystem Arm = new ArmSubsystem();
     private final IntakeSusbsystem Intake = new IntakeSusbsystem();
-
+    private final PoseManager Pose = new PoseManager(Arm, Intake);
     
     // --------------------------------------------------------------------------------------------
     // -- Cameras
@@ -89,6 +89,7 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     // -- Shared Commands
     // --------------------------------------------------------------------------------------------
+
     private Command Command_IntakeNoteSequence;
 
     // --------------------------------------------------------------------------------------------
@@ -116,8 +117,7 @@ public class RobotContainer
         ConfigureOperatorBindings();
 
         drivetrain.registerTelemetry(logger::telemeterize);
-
-    }
+   }
 
     private void CreateSharedCommands()
     {
@@ -144,7 +144,7 @@ public class RobotContainer
                 , Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Stowed)));
         
         NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence);
-        NamedCommands.registerCommand("stop Intake motors", Intake.Command_StopIntake());
+        NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
         NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSusbsystem.EOutakeType.speaker));
     }
     
@@ -209,20 +209,18 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     private void ConfigureOperatorBindings()
     {
+        Operator.start().onTrue(Arm.Command_ZeroArmEncoder().alongWith(Intake.Command_ZeroPivotEncoder().ignoringDisable(true)));
 
         // -- Testing arm code
-        Operator.a().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed));
-        Operator.b().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_speaker));
-        Operator.x().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp));
-        Operator.y().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap));
-        Operator.back().whileTrue(Arm.ManualArmControl());
+        Operator.back().whileTrue(Arm.Command_ManualArmControl());
+
+        Operator.a().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Stowed));
+        Operator.b().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Intake));
+        Operator.x().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Amp));
+        Operator.y().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Speaker));
 
 
-
-        Operator.povDown().onTrue(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Intake));
-        Operator.povRight().onTrue(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Shoot_speaker));
-        Operator.povLeft().onTrue(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.amp));
-        Operator.povUp().onTrue(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Stowed));
+        Operator.rightBumper().onTrue(Pose.Command_AutoPose());
 
         // -- Intaking
 //        Operator.rightTrigger().whileTrue(

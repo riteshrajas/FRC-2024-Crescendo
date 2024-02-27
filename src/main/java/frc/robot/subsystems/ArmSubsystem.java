@@ -18,7 +18,7 @@ public class ArmSubsystem extends SubsystemBase
 {
     private static final boolean EnableRightMotor = true;
     private static final boolean TunePID = false;
-    private static final double ArmTolerance = 10.0 / 360.0;
+    private static final double ArmTolerance = 15.0 / 360.0;
 
     private double ManualArmControlTarget = 0;
 
@@ -121,9 +121,6 @@ public class ArmSubsystem extends SubsystemBase
         System.out.println("Configs Applied!");
     }
 
-    /*
-        Command for setting the position of the arm using motion magic foc
-    */
     public Command Command_SetPosition(EArmPosition position) {
         return
             run(() ->
@@ -134,19 +131,18 @@ public class ArmSubsystem extends SubsystemBase
             .until(() ->
             {
                 double actualRotation = LeftMotor.getPosition().getValue();
+                SmartDashboard.putNumber("Arm.Error", position.Rotations - actualRotation);
                 return MathUtil.isNear(position.Rotations, actualRotation, ArmTolerance);
             })
             .andThen(() -> System.out.println("Arm reached target!"));
     }
-    /*
-    Zeroing the arm encoder
-    */
-    public Command zeroArmEncoder()
+
+    public Command Command_ZeroArmEncoder()
     {
        return runOnce(() -> LeftMotor.setPosition(0));
     }
 
-    public Command ManualArmControl()
+    public Command Command_ManualArmControl()
     {
         return runOnce(() -> ManualArmControlTarget = LeftMotor.getPosition().getValue())
                 .andThen(run(() ->

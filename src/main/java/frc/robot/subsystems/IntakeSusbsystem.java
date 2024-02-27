@@ -24,9 +24,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class IntakeSusbsystem extends SubsystemBase {
     public enum EPivotPosition {
         Stowed(0),
-        Intake(19.27),
-        Shoot_speaker(8.85),
-        amp(33),
+        Intake(-19.27),
+        Shoot_speaker(-8.85),
+        amp(-33),
         trap(0);
 
         private final double Rotations;
@@ -220,7 +220,7 @@ public class IntakeSusbsystem extends SubsystemBase {
                 }
 
                 lastCurrent.set(curCurrent);
-                return currentSpikeCount.get() >= 2;
+                return currentSpikeCount.get() >= 1;
             });
     }
 
@@ -245,33 +245,7 @@ public class IntakeSusbsystem extends SubsystemBase {
     }
 
 
-    /*
-    Command for outtaking a note into a scoring location during auto, take in account
-    elasped time and not triggers
-    */
-    public Command Command_OuttakeNoteAuto(EOutakeType outakeType)
-    {
-        return startEnd(
-                () -> {
-                    autoOuttakeTimer.start();
-                    IntakePID.setReference(outakeType.RPM, CANSparkBase.ControlType.kVelocity);
-                },
-                () -> {
-                    IntakePID.setReference(0, CANSparkBase.ControlType.kVelocity);
-                    autoOuttakeTimer.stop();
-                    autoOuttakeTimer.reset();
-                }
-        ).until(() ->
-        {
-            return autoOuttakeTimer.hasElapsed(0.5);
-        });
-    }
-
-
-    /*
-    Command for zeroing the encoder of the intake pivot
-    */
-    public Command zeroPivotEncoder()
+    public Command Command_ZeroPivotEncoder()
     {
         return runOnce(() -> PivotMotor.setPosition(0));
     }
