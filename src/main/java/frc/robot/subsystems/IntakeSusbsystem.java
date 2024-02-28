@@ -75,7 +75,7 @@ public class IntakeSusbsystem extends SubsystemBase {
 
     private final MotionMagicVoltage MotionMagicRequest = new MotionMagicVoltage(0);
 
-    private final VoltageOut Voltagerequest = new VoltageOut(0);
+    private final VoltageOut VoltageRequest = new VoltageOut(0);
 
     private final DutyCycleOut DutyCycleRequest = new DutyCycleOut(0);
 
@@ -198,7 +198,7 @@ public class IntakeSusbsystem extends SubsystemBase {
         return
             runOnce( () ->
                      {
-                         IntakeMotor.setControl(Voltagerequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
+                         IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
 //                         IntakePID.setReference(TEMP_IntakeVoltage, CANSparkBase.ControlType.kVoltage) );
 
                      });
@@ -222,7 +222,7 @@ public class IntakeSusbsystem extends SubsystemBase {
                     //SmartDashboard.putNumber("Intake.TargetVelocity", 2000);
                     //IntakePID.setReference(2000, CANSparkBase.ControlType.kVelocity);
 //                    IntakePID.setReference(TEMP_IntakeVoltage, CANSparkBase.ControlType.kVoltage);
-                    IntakeMotor.setControl(Voltagerequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
+                    IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
                 },
                 () -> IntakeMotor.stopMotor()
             )
@@ -258,7 +258,7 @@ public class IntakeSusbsystem extends SubsystemBase {
     }
 
 
-    public Command Command_StopIntake() //use this in auto just incase we miss a note note
+    public Command Command_StopIntake() //use this in auto just in case we miss a note
     {
         return runOnce(() -> IntakeMotor.stopMotor());
     }
