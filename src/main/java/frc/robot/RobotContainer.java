@@ -49,14 +49,13 @@ public class RobotContainer
     private final double MaxRotationsPerSecond = 0.75;
     private LookupTable ThrottleLut = new LookupTable.Normalized()
             .AddValue(0.1, 0.0) // dead-band
-            .AddValue(0.55, 0.05)
-            .AddValue(0.8, 0.15);
+            .AddValue(0.35, 0.05)
+            .AddValue(0.75, 0.2);
 
     private LookupTable TurnLut = new LookupTable.Normalized()
             .AddValue(0.1, 0.0) // dead-band
-            .AddValue(0.55, 0.05)
-            .AddValue(0.8, 0.15);
-
+            .AddValue(0.35, 0.05)
+            .AddValue(0.75, 0.2);
     
     // --------------------------------------------------------------------------------------------
     // -- Subsystems~
