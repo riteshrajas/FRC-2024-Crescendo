@@ -48,7 +48,8 @@ public final class Constants {
         CanCoder_BR,
         CanCoder_FL,
         CanCoder_FR,
-        Pigeon
+        Pigeon,
+        IntakeMotor
 
         ;
 

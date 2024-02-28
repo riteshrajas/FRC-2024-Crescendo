@@ -211,7 +211,28 @@ public class RobotContainer
     {
         Operator.start().onTrue(Arm.Command_ZeroArmEncoder().alongWith(Intake.Command_ZeroPivotEncoder().ignoringDisable(true)));
 
+
+        //Operator.a().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed));
+        //Operator.b().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_speaker));
+        //Operator.x().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp));
+        //Operator.y().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap));
+
+        //Operator.povDown().onTrue(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Intake));
+        //Operator.povRight().onTrue(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Shoot_speaker));
+        //Operator.povLeft().onTrue(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.amp));
+        //Operator.povUp().onTrue(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Stowed));
+
         // -- Testing arm code
+
+
+        /**
+         * Zach-
+         *
+         *
+         * Testing using Limelight or Operator to set the robot pose/ arm & intake
+         * to certain spot
+         */
+
         Operator.back().whileTrue(Arm.Command_ManualArmControl());
 
         Operator.a().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Stowed));
@@ -221,6 +242,8 @@ public class RobotContainer
 
 
         Operator.rightBumper().onTrue(Pose.Command_AutoPose());
+
+
 
         // -- Intaking
 //        Operator.rightTrigger().whileTrue(

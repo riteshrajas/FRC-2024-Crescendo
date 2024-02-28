@@ -1,6 +1,8 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import com.ctre.phoenix6.signals.GravityTypeValue;
@@ -8,6 +10,7 @@ import com.revrobotics.*;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DutyCycle;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
@@ -58,7 +61,8 @@ public class IntakeSusbsystem extends SubsystemBase {
     private TalonFX PivotMotor;
 
     private SparkPIDController IntakePID;
-    private CANSparkFlex IntakeMotor;
+//    private CANSparkFlex IntakeMotor;
+    private TalonFX IntakeMotor;
     private RelativeEncoder IntakeEncoder;
 //    private TalonFX IntakeMotor = new TalonFX(Constants.Intake.INTAKE_MOTOR_ID);
 
@@ -71,6 +75,10 @@ public class IntakeSusbsystem extends SubsystemBase {
 
     private final MotionMagicVoltage MotionMagicRequest = new MotionMagicVoltage(0);
 
+    private final VoltageOut Voltagerequest = new VoltageOut(0);
+
+    private final DutyCycleOut DutyCycleRequest = new DutyCycleOut(0);
+
     @Override
     public void initSendable(SendableBuilder builder) {
         super.initSendable(builder);
@@ -82,10 +90,11 @@ public class IntakeSusbsystem extends SubsystemBase {
         InitializeConfigs();
         PivotMotor = CreateMotor(Constants.CanivoreBusIDs.IntakePivot.GetID());
 
-        IntakeMotor = CreateSparkMotor(Constants.RioCanBusIDs.IntakeMotor.ordinal());
-        IntakePID = CreatePID(IntakeMotor);
-        IntakeEncoder = IntakeMotor.getEncoder();
-        IntakeMotor.burnFlash();
+//        IntakeMotor = CreateSparkMotor(Constants.RioCanBusIDs.IntakeMotor.ordinal());
+//        IntakePID = CreatePID(IntakeMotor);
+//        IntakeEncoder = IntakeMotor.getEncoder();
+//        IntakeMotor.burnFlash();
+        IntakeMotor = CreateMotor(Constants.CanivoreBusIDs.IntakeMotor.GetID());
         VexLimitSwitch = new DigitalInput(0);
 
         ApplyConfigs();
@@ -187,7 +196,13 @@ public class IntakeSusbsystem extends SubsystemBase {
         //       but we can't do that right now due to how the intake and arm subsystems are divided up. Until then we'll just
         //       spin up the wheels and rely on the invoking command sequence to stop the intake.
         return
-            runOnce( () -> IntakePID.setReference(TEMP_IntakeVoltage, CANSparkBase.ControlType.kVoltage) );
+            runOnce( () ->
+                     {
+                         IntakeMotor.setControl(Voltagerequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
+//                         IntakePID.setReference(TEMP_IntakeVoltage, CANSparkBase.ControlType.kVoltage) );
+
+                     });
+//
     }
 
     public Command Command_IntakeNote()
@@ -201,11 +216,13 @@ public class IntakeSusbsystem extends SubsystemBase {
                 () ->
                 {
                     currentSpikeCount.set(0);
-                    lastCurrent.set(IntakeMotor.getOutputCurrent());
+                    lastCurrent.set(IntakeMotor.getStatorCurrent().getValue());
+//                    lastCurrent.set(IntakeMotor.getOutputCurrent();
 
                     //SmartDashboard.putNumber("Intake.TargetVelocity", 2000);
                     //IntakePID.setReference(2000, CANSparkBase.ControlType.kVelocity);
-                    IntakePID.setReference(TEMP_IntakeVoltage, CANSparkBase.ControlType.kVoltage);
+//                    IntakePID.setReference(TEMP_IntakeVoltage, CANSparkBase.ControlType.kVoltage);
+                    IntakeMotor.setControl(Voltagerequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
                 },
                 () -> IntakeMotor.stopMotor()
             )
@@ -213,7 +230,8 @@ public class IntakeSusbsystem extends SubsystemBase {
             {
                 SmartDashboard.putNumber("Intake.CurrentSpikeCount", currentSpikeCount.get());
 
-                double curCurrent = IntakeMotor.getOutputCurrent();
+                double curCurrent = IntakeMotor.getStatorCurrent().getValue();
+//                double curCurrent = IntakeMotor.getOutputCurrent();
                 if (curCurrent - lastCurrent.get() > 20)
                 {
                     currentSpikeCount.getAndIncrement();
@@ -232,7 +250,8 @@ public class IntakeSusbsystem extends SubsystemBase {
                 {
                     //SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPM);
                     //IntakePID.setReference(outtakeType.RPM, CANSparkBase.ControlType.kVelocity);
-                    IntakePID.setReference(12, CANSparkBase.ControlType.kVoltage);
+//                    IntakePID.setReference(12, CANSparkBase.ControlType.kVoltage);
+                    IntakeMotor.setControl(DutyCycleRequest.withOutput(1));
                 },
                 () -> IntakeMotor.stopMotor()
         );
@@ -254,7 +273,7 @@ public class IntakeSusbsystem extends SubsystemBase {
     {
         SmartDashboard.putNumber("Intake.PivotPosition", PivotMotor.getPosition().getValue());
         SmartDashboard.putNumber("Intake.ActualVelocity", IntakeEncoder.getVelocity());
-        SmartDashboard.putNumber("Intake.ActualCurrent", IntakeMotor.getOutputCurrent());
+        SmartDashboard.putNumber("Intake.ActualCurrent", IntakeMotor.getStatorCurrent().getValue());
 
         UpdateConfigs();
     }
