@@ -94,7 +94,7 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     // -- Auto Chooser
     // --------------------------------------------------------------------------------------------
-    private final SendableChooser<Command> autoChooser;
+    private SendableChooser<Command> autoChooser;
 
     // --------------------------------------------------------------------------------------------
     // -- State
@@ -106,8 +106,20 @@ public class RobotContainer
     {
         CreateSharedCommands();
 
+        NamedCommands.registerCommand("Arm Score", Pose.Command_GoToPose(PoseManager.EPose.Speaker));
+        NamedCommands.registerCommand("Arm Score_AMP", Pose.Command_GoToPose(PoseManager.EPose.Amp));
+
+        NamedCommands.registerCommand("Arm Stow", Pose.Command_GoToPose(PoseManager.EPose.Stowed));
+
+        NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence);
+        NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
+        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_OuttakeAuto(IntakeSusbsystem.EOutakeType.speaker));
+        NamedCommands.registerCommand("Shoot Amp", Intake.Command_OuttakeAuto(IntakeSusbsystem.EOutakeType.amp));
+
         autoChooser = AutoBuilder.buildAutoChooser();
-        ConfigureAutoCommands();
+
+        autoChooser.addOption("mid", drivetrain.getAutoPath("AMP Auto") );
+
         SmartDashboard.putData("Auto Chooser", autoChooser);
 
         SetDefaultCommands();
@@ -131,20 +143,7 @@ public class RobotContainer
 
     private void ConfigureAutoCommands()
     {
-        autoChooser.addOption("mid", drivetrain.getAutoPath("3 note middle") );
 
-
-        NamedCommands.registerCommand("Arm Score", Commands.parallel(
-                  Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_speaker)
-                , Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Shoot_speaker)));
-        
-        NamedCommands.registerCommand("Arm Stow", Commands.parallel(
-                  Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)
-                , Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Stowed)));
-        
-        NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence);
-        NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
-        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSusbsystem.EOutakeType.speaker));
     }
     
     public Command GetAutonomousCommand()

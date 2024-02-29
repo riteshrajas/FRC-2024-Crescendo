@@ -65,7 +65,7 @@ public class SwerveSubsystem extends SwerveDrivetrain implements Subsystem {
                         TunerConstants.kSpeedAt12VoltsMps,
                         driveBaseRadius,
                         new ReplanningConfig()),
-                () -> true,
+                () -> false,
                 this);
 
 

@@ -266,6 +266,26 @@ public class IntakeSusbsystem extends SubsystemBase {
         );
     }
 
+    public Command Command_OuttakeAuto(EOutakeType outtakeType)
+    {
+        return startEnd(
+                () ->
+                {
+                    //SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPM);
+                    //IntakePID.setReference(outtakeType.RPM, CANSparkBase.ControlType.kVelocity);
+//                    IntakePID.setReference(12, CANSparkBase.ControlType.kVoltage);
+                    IntakeMotor.setControl(DutyCycleRequest.withOutput(-0.75));
+                    autoOuttakeTimer.start();
+                },
+                () ->
+                {
+                    IntakeMotor.stopMotor();
+                    autoOuttakeTimer.stop();
+                    autoOuttakeTimer.reset();
+                }
+        ).until(() -> autoOuttakeTimer.hasElapsed(0.5));
+    }
+
 
     public Command Command_StopIntake() //use this in auto just in case we miss a note
     {
