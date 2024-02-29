@@ -20,8 +20,6 @@ public class PoseManager
     private ArmSubsystem Arm;
     private IntakeSubsystem Intake;
 
-    static public final long AmpWaitTime = 1;
-
     public PoseManager(ArmSubsystem arm, IntakeSubsystem intake)
     {
         Arm = arm;
