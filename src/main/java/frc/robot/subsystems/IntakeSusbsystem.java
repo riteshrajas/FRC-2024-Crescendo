@@ -28,7 +28,7 @@ public class IntakeSusbsystem extends SubsystemBase {
     public enum EPivotPosition {
         Stowed(0),
         Intake(-19.27),
-        Shoot_speaker(-8.85),
+        Shoot_speaker(-7.75),
         amp(-33),
         trap(0);
 
@@ -53,7 +53,7 @@ public class IntakeSusbsystem extends SubsystemBase {
 
     private static final boolean TunePID = false;
     private static final double PivotTolerance = 15.0 / 360.0;
-    private static final double TEMP_IntakeVoltage = -7;
+    private static final double TEMP_IntakeVoltage = 7;
 
     private Timer rumbleTimer = new Timer();
     private Timer autoOuttakeTimer = new Timer();
@@ -68,6 +68,9 @@ public class IntakeSusbsystem extends SubsystemBase {
 
     private TalonFXConfiguration TalonConfigs;
     private Slot0Configs TalonConfigs_Slot0;
+
+    private VoltageConfigs TalonConfigs_Voltage;
+
     private MotionMagicConfigs TalonConfigs_MotionMagic;
 
     private DigitalInput VexLimitSwitch;
@@ -107,6 +110,8 @@ public class IntakeSusbsystem extends SubsystemBase {
         TalonConfigs = new TalonFXConfiguration();
         TalonConfigs_Slot0 = TalonConfigs.Slot0;
         TalonConfigs_MotionMagic = TalonConfigs.MotionMagic;
+//        TalonConfigs)
+
 
         TalonConfigs_Slot0.kP = 10;
         TalonConfigs_Slot0.kI = 0;
@@ -126,7 +131,10 @@ public class IntakeSusbsystem extends SubsystemBase {
         TalonConfigs_MotionMagic.MotionMagicExpo_kV = 0.1;
 
         MotionMagicRequest.Slot = 0;
+//        Voltagerequest
+
     }
+
 
     private TalonFX CreateMotor(int deviceID) {
         var motor = new TalonFX(deviceID, Constants.CanivoreBusIDs.BusName);
@@ -138,6 +146,7 @@ public class IntakeSusbsystem extends SubsystemBase {
         var timeout = 0.05;
 
         PivotMotor.getConfigurator().apply(TalonConfigs, timeout);
+        IntakeMotor.getConfigurator().apply(TalonConfigs, timeout);
 
         System.out.println("Configs Applied!");
     }
@@ -232,7 +241,7 @@ public class IntakeSusbsystem extends SubsystemBase {
 
                 double curCurrent = IntakeMotor.getStatorCurrent().getValue();
 //                double curCurrent = IntakeMotor.getOutputCurrent();
-                if (curCurrent - lastCurrent.get() > 20)
+                if (curCurrent - lastCurrent.get() > 25)
                 {
                     currentSpikeCount.getAndIncrement();
                 }
@@ -251,7 +260,7 @@ public class IntakeSusbsystem extends SubsystemBase {
                     //SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPM);
                     //IntakePID.setReference(outtakeType.RPM, CANSparkBase.ControlType.kVelocity);
 //                    IntakePID.setReference(12, CANSparkBase.ControlType.kVoltage);
-                    IntakeMotor.setControl(DutyCycleRequest.withOutput(1));
+                    IntakeMotor.setControl(DutyCycleRequest.withOutput(-0.75));
                 },
                 () -> IntakeMotor.stopMotor()
         );
@@ -271,8 +280,8 @@ public class IntakeSusbsystem extends SubsystemBase {
 
     public void periodic()
     {
-        SmartDashboard.putNumber("Intake.PivotPosition", PivotMotor.getPosition().getValue());
-        SmartDashboard.putNumber("Intake.ActualVelocity", IntakeEncoder.getVelocity());
+//        SmartDashboard.putNumber("Intake.PivotPosition", PivotMotor.getPosition().getValue());
+//        SmartDashboard.putNumber("Intake.ActualVelocity", IntakeEncoder.getVelocity());
         SmartDashboard.putNumber("Intake.ActualCurrent", IntakeMotor.getStatorCurrent().getValue());
 
         UpdateConfigs();
