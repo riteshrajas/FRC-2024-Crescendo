@@ -1,5 +1,7 @@
 package frc.robot;
 
+import edu.wpi.first.wpilibj2.command.Command;
+
 import java.util.Set;
 
 public class Vision
@@ -15,6 +17,8 @@ public class Vision
             , 11, 12, 13 // Red Stage
             , 14, 15, 16 // Red Stage
         );
+
+    static private int PipelineNumber = 0;
 
     static private boolean ResultsAreStale = true;
     static private LimelightHelpers.Results LatestResults = null;
@@ -60,4 +64,7 @@ public class Vision
 
         return bestTarget;
     }
+    static public void GetDefaultPipeline(){PipelineNumber = 0;}
+
+
 }

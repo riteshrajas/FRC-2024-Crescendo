@@ -3,7 +3,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.ArmSubsystem;
-import frc.robot.subsystems.IntakeSusbsystem;
+import frc.robot.subsystems.IntakeSubsystem;
 
 public class PoseManager
 {
@@ -18,9 +18,11 @@ public class PoseManager
     }
 
     private ArmSubsystem Arm;
-    private IntakeSusbsystem Intake;
+    private IntakeSubsystem Intake;
 
-    public PoseManager(ArmSubsystem arm, IntakeSusbsystem intake)
+    static public final long AmpWaitTime = 1;
+
+    public PoseManager(ArmSubsystem arm, IntakeSubsystem intake)
     {
         Arm = arm;
         Intake = intake;
@@ -55,7 +57,7 @@ public class PoseManager
         {
             return Commands.parallel(
                 Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed),
-                Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Stowed)
+                Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)
             );
         }
 
@@ -63,7 +65,7 @@ public class PoseManager
         {
             return Commands.parallel(
                     Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed),
-                    Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Intake)
+                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
             );
         }
 
@@ -71,28 +73,31 @@ public class PoseManager
         {
             return Commands.parallel(
                     Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp),
-                    Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.amp)
+                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.amp)
             );
+
         }
 
         if (pose == EPose.Speaker)
         {
             return Commands.parallel(
                     Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_speaker),
-                    Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Shoot_speaker)
+                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Shoot_speaker)
             );
+
         }
 
         if (pose == EPose.PreClimb)
         {
             return Commands.parallel(
                     Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos),
-                    Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Stowed)
+                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)
             );
         }
 
         return Commands.none();
     }
+
 
     public Command Command_AutoPose()
     {

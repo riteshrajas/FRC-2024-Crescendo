@@ -130,7 +130,7 @@ public final class Constants {
         public static final double TargetThreshold = 10;
 
         /******** Pivot PID ********/
-        public static final PIDParameters PIVOT_MOTOR_PID = new PIDParameters(0, "Pivot Motor PID", 0.02, 0.0, 0.25, 0.0, 50); //all of the stuff in this are placeholders
+        public static final PIDParameters PIVOT_MOTOR_PID = new PIDParameters(0, "Pivot Motor PID", 0.02, 0.0, 0.25, 0.0, 50); //everything in this is a placeholder
 
     }
 
@@ -139,7 +139,7 @@ public final class Constants {
         public static final int INDEXER_MOTOR_ID = 100;
 
         /******** Indexer PID ********/
-        public static final PIDParameters INDEXER_MOTOR_PID = new PIDParameters(0, "Pivot Motor PID", 0.02, 0.0, 0.25, 0.0, 50); //all of the stuff in this are placeholders
+        public static final PIDParameters INDEXER_MOTOR_PID = new PIDParameters(0, "Pivot Motor PID", 0.02, 0.0, 0.25, 0.0, 50); //everything in this is a placeholder
 
         /********** Indexer Motor Power **********/
         public static final double Indexer_MOTOR_POWER = 1;

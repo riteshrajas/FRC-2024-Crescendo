@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 
-public class IntakeSusbsystem extends SubsystemBase {
+public class IntakeSubsystem extends SubsystemBase {
     public enum EPivotPosition {
         Stowed(0),
         Intake(-19.27),
@@ -89,7 +89,7 @@ public class IntakeSusbsystem extends SubsystemBase {
 
 //    private final VelocityDutyCycle Velocity = new VelocityDutyCycle(0);
 
-    public IntakeSusbsystem() {
+    public IntakeSubsystem() {
         InitializeConfigs();
         PivotMotor = CreateMotor(Constants.CanivoreBusIDs.IntakePivot.GetID());
 

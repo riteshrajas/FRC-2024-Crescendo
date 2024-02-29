@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ArmSubsystem;
-import frc.robot.subsystems.IntakeSusbsystem;
+import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import friarLib2.math.LookupTable;
 import friarLib2.vision.LimelightCamera;
@@ -62,7 +62,7 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     public final SwerveSubsystem drivetrain = TunerConstants.DriveTrain;
     private final ArmSubsystem Arm = new ArmSubsystem();
-    private final IntakeSusbsystem Intake = new IntakeSusbsystem();
+    private final IntakeSubsystem Intake = new IntakeSubsystem();
     private final PoseManager Pose = new PoseManager(Arm, Intake);
     
     // --------------------------------------------------------------------------------------------
@@ -85,11 +85,19 @@ public class RobotContainer
     public final SwerveRequest.RobotCentric AimRobot = new SwerveRequest.RobotCentric().withSteerRequestType(SwerveModule.SteerRequestType.MotionMagicExpo);
     private final Telemetry logger = new Telemetry(TunerConstants.kSpeedAt12VoltsMps);
 
+    private final double delay = .2;
+
+    private final double delay_2 = .05;
+
     // --------------------------------------------------------------------------------------------
     // -- Shared Commands
     // --------------------------------------------------------------------------------------------
 
     private Command Command_IntakeNoteSequence;
+
+    private Command Command_AmpSequence;
+
+    private Command Command_SlowFall;
 
     // --------------------------------------------------------------------------------------------
     // -- Auto Chooser
@@ -123,9 +131,24 @@ public class RobotContainer
         Command_IntakeNoteSequence =
             Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)
             .andThen(Intake.Command_PreIntakeSpinUp())
-            .andThen(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Intake))
+            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake))
             .andThen(Intake.Command_IntakeNote())
-            .andThen(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Stowed));
+            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed));
+
+        Command_AmpSequence =
+                Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
+                        .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.amp).withTimeout(delay).andThen(Arm.Command_SetPosition(
+                                ArmSubsystem.EArmPosition.amp)));
+
+//                Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
+//                        .andThen(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp).alongWith(Intake.Command_SetPivotPosition(
+//                                IntakeSubsystem.EPivotPosition.amp)));
+
+        Command_SlowFall =
+                Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)
+                        .withTimeout(delay_2).andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)).andThen(Intake.Command_SetPivotPosition(
+                              IntakeSubsystem.EPivotPosition.Stowed));
+
     }
 
 
@@ -136,15 +159,15 @@ public class RobotContainer
 
         NamedCommands.registerCommand("Arm Score", Commands.parallel(
                   Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_speaker)
-                , Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Shoot_speaker)));
+                , Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Shoot_speaker)));
         
         NamedCommands.registerCommand("Arm Stow", Commands.parallel(
                   Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)
-                , Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Stowed)));
+                , Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)));
         
         NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence);
         NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
-        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSusbsystem.EOutakeType.speaker));
+        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker));
     }
     
     public Command GetAutonomousCommand()
@@ -189,13 +212,13 @@ public class RobotContainer
         Driver.rightTrigger()
             .whileTrue(Command_IntakeNoteSequence)
             .onFalse(Intake.Command_StopIntake() // Stop intake here is temporary until we can refactor the subsystems to make the intake motor separate from the pivot motor
-            .andThen(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Stowed)));
+            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)));
 
 
 
         Driver.leftTrigger().whileTrue(
                 // TODO: automatially decide the outtake type based on vision
-                Intake.Command_Outtake(IntakeSusbsystem.EOutakeType.amp)
+                Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp)
         );
 
 //        Driver.x().onTrue(Commands.run(() -> RotationModeIsRobotCentric = !RotationModeIsRobotCentric));
@@ -234,10 +257,13 @@ public class RobotContainer
 
         Operator.back().whileTrue(Arm.Command_ManualArmControl());
 
-        Operator.a().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Stowed));
+        //Operator.a().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Stowed));
         Operator.b().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Intake));
-        Operator.x().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Amp));
+       // Operator.x().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Amp));
         Operator.y().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Speaker));
+
+        Operator.x().onTrue(Command_AmpSequence);
+        Operator.a().onTrue(Command_SlowFall);
 
 
         Operator.rightBumper().onTrue(Pose.Command_AutoPose());
