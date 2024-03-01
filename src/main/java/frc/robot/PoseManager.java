@@ -56,37 +56,26 @@ public class PoseManager
         if (pose == EPose.Stowed)
         {
             return Commands.parallel(
-                Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed),
-                Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)
+                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed),
+                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)
             );
         }
 
         if (pose == EPose.Intake)
         {
-//            return Commands.parallel(
-//                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed),
-//                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
-//            );
-
             return Commands.parallel(
                     Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed),
-                    Commands.waitUntil(() -> Arm.GetArmPosition() > 0)
-                            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed))
+                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
             );
         }
 
         if (pose == EPose.Amp)
         {
-//            return Commands.parallel(
-//                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp),
-//                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.amp)
-//            );
-
             return Commands.parallel(
-                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Amp),
-                    Commands.waitUntil(() -> Intake.GetPivotPos() > 0)
-                            .andThen(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Amp))
+                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Amp),
+                    Commands.waitUntil(() -> Arm.GetArmPosition() < -0.025).andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Amp))
             );
+
 
         }
 
@@ -116,7 +105,5 @@ public class PoseManager
     {
         return Command_GoToPose(GetPoseForCurrentTag());
     }
-
-
 
 }

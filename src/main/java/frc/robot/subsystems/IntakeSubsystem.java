@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class IntakeSubsystem extends SubsystemBase {
     public enum EPivotPosition {
         Stowed(0),
-        Intake(-19.27),
+        Intake(-18.75),
         Shoot_speaker(-7.75),
         Amp(-33),
         Trap(0);
@@ -98,8 +98,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
         TalonConfigs_Slot0.withGravityType(GravityTypeValue.Arm_Cosine);
 
-        TalonConfigs_MotionMagic.MotionMagicAcceleration = 60; // rps/s acceleration (0.5 seconds)
-        TalonConfigs_MotionMagic.MotionMagicCruiseVelocity = 80; // rps cruise velocity
+        TalonConfigs_MotionMagic.MotionMagicAcceleration = 300; // rps/s acceleration (0.5 seconds)
+        TalonConfigs_MotionMagic.MotionMagicCruiseVelocity = 160; // rps cruise velocity
         TalonConfigs_MotionMagic.MotionMagicJerk = 1600; // rps/s^2 jerk (0.1 seconds)
         TalonConfigs_MotionMagic.MotionMagicExpo_kA = 0.1;
         TalonConfigs_MotionMagic.MotionMagicExpo_kV = 0.1;
@@ -227,24 +227,24 @@ public class IntakeSubsystem extends SubsystemBase {
 //        SmartDashboard.putNumber("Intake.Configs.I", IntakePID.getI());
 //        SmartDashboard.putNumber("Intake.Configs.D", IntakePID.getD());
 
-//        SmartDashboard.putNumber("Pivot.Target", 0);
-//        SmartDashboard.putNumber("Pivot.Position", 0);
-//        SmartDashboard.putNumber("Pivot.Error", 0);
-//
-//        SmartDashboard.putNumber("Pivot.Configs.P", TalonConfigs_Slot0.kP);
-//        SmartDashboard.putNumber("Pivot.Configs.I", TalonConfigs_Slot0.kI);
-//        SmartDashboard.putNumber("Pivot.Configs.D", TalonConfigs_Slot0.kD);
-//
-//        SmartDashboard.putNumber("Pivot.Configs.S", TalonConfigs_Slot0.kS);
-//        SmartDashboard.putNumber("Pivot.Configs.A", TalonConfigs_Slot0.kA);
-//        SmartDashboard.putNumber("Pivot.Configs.V", TalonConfigs_Slot0.kV);
-//        SmartDashboard.putNumber("Pivot.Configs.G", TalonConfigs_Slot0.kG);
-//
-//        SmartDashboard.putNumber("Pivot.Configs.MMCruise", TalonConfigs_MotionMagic.MotionMagicCruiseVelocity);
-//        SmartDashboard.putNumber("Pivot.Configs.MMAccel", TalonConfigs_MotionMagic.MotionMagicAcceleration);
-//        SmartDashboard.putNumber("Pivot.Configs.MMJerk", TalonConfigs_MotionMagic.MotionMagicJerk);
-//        SmartDashboard.putNumber("Pivot.Configs.MMExpoA", TalonConfigs_MotionMagic.MotionMagicExpo_kA);
-//        SmartDashboard.putNumber("Pivot.Configs.MMExpoV", TalonConfigs_MotionMagic.MotionMagicExpo_kV);
+        SmartDashboard.putNumber("Pivot.Target", 0);
+        SmartDashboard.putNumber("Pivot.Position", 0);
+        SmartDashboard.putNumber("Pivot.Error", 0);
+
+        SmartDashboard.putNumber("Pivot.Configs.P", TalonConfigs_Slot0.kP);
+        SmartDashboard.putNumber("Pivot.Configs.I", TalonConfigs_Slot0.kI);
+        SmartDashboard.putNumber("Pivot.Configs.D", TalonConfigs_Slot0.kD);
+
+        SmartDashboard.putNumber("Pivot.Configs.S", TalonConfigs_Slot0.kS);
+        SmartDashboard.putNumber("Pivot.Configs.A", TalonConfigs_Slot0.kA);
+        SmartDashboard.putNumber("Pivot.Configs.V", TalonConfigs_Slot0.kV);
+        SmartDashboard.putNumber("Pivot.Configs.G", TalonConfigs_Slot0.kG);
+
+        SmartDashboard.putNumber("Pivot.Configs.MMCruise", TalonConfigs_MotionMagic.MotionMagicCruiseVelocity);
+        SmartDashboard.putNumber("Pivot.Configs.MMAccel", TalonConfigs_MotionMagic.MotionMagicAcceleration);
+        SmartDashboard.putNumber("Pivot.Configs.MMJerk", TalonConfigs_MotionMagic.MotionMagicJerk);
+        SmartDashboard.putNumber("Pivot.Configs.MMExpoA", TalonConfigs_MotionMagic.MotionMagicExpo_kA);
+        SmartDashboard.putNumber("Pivot.Configs.MMExpoV", TalonConfigs_MotionMagic.MotionMagicExpo_kV);
     }
 
     private void UpdateConfigs()
@@ -267,45 +267,45 @@ public class IntakeSubsystem extends SubsystemBase {
 //        }
 
         // -- Pivot
-//        var pivotDirty = false;
+        var pivotDirty = false;
 //
-//        var p = SmartDashboard.getNumber("Pivot.Configs.P", TalonConfigs_Slot0.kP);
-//        var i = SmartDashboard.getNumber("Pivot.Configs.I", TalonConfigs_Slot0.kI);
-//        var d = SmartDashboard.getNumber("Pivot.Configs.D", TalonConfigs_Slot0.kD);
-//
-//        var s = SmartDashboard.getNumber("Pivot.Configs.S", TalonConfigs_Slot0.kS);
-//        var a = SmartDashboard.getNumber("Pivot.Configs.A", TalonConfigs_Slot0.kA);
-//        var v = SmartDashboard.getNumber("Pivot.Configs.V", TalonConfigs_Slot0.kV);
-//        var g = SmartDashboard.getNumber("Pivot.Configs.G", TalonConfigs_Slot0.kG);
-//
-//        var mmA = SmartDashboard.getNumber("Pivot.Configs.MMAccel", TalonConfigs_MotionMagic.MotionMagicAcceleration);
-//        var mmC = SmartDashboard.getNumber("Pivot.Configs.MMCruise", TalonConfigs_MotionMagic.MotionMagicCruiseVelocity);
-//        var mmJ = SmartDashboard.getNumber("Pivot.Configs.MMJerk", TalonConfigs_MotionMagic.MotionMagicJerk);
-//        var mmEA = SmartDashboard.getNumber("Pivot.Configs.mmExpoA", TalonConfigs_MotionMagic.MotionMagicExpo_kA);
-//        var mmEV = SmartDashboard.getNumber("Pivot.Configs.mmExpoV", TalonConfigs_MotionMagic.MotionMagicExpo_kV);
-//
-//
-//
-//        if (p != TalonConfigs_Slot0.kP) { TalonConfigs_Slot0.kP = p; pivotDirty = true; }
-//        if (i != TalonConfigs_Slot0.kI) { TalonConfigs_Slot0.kI = i; pivotDirty = true; }
-//        if (d != TalonConfigs_Slot0.kD) { TalonConfigs_Slot0.kD = d; pivotDirty = true; }
-//
-//        if (s != TalonConfigs_Slot0.kS) { TalonConfigs_Slot0.kS = s; pivotDirty = true; }
-//        if (a != TalonConfigs_Slot0.kA) { TalonConfigs_Slot0.kA = a; pivotDirty = true; }
-//        if (v != TalonConfigs_Slot0.kV) { TalonConfigs_Slot0.kV = v; pivotDirty = true; }
-//        if (g != TalonConfigs_Slot0.kG) { TalonConfigs_Slot0.kG = g; pivotDirty = true; }
-//
-//        if (mmC != TalonConfigs_MotionMagic.MotionMagicCruiseVelocity) { TalonConfigs_MotionMagic.MotionMagicCruiseVelocity = mmC; pivotDirty = true; }
-//        if (mmA != TalonConfigs_MotionMagic.MotionMagicAcceleration) { TalonConfigs_MotionMagic.MotionMagicAcceleration = mmA; pivotDirty = true; }
-//        if (mmJ != TalonConfigs_MotionMagic.MotionMagicJerk) { TalonConfigs_MotionMagic.MotionMagicJerk = mmJ; pivotDirty = true; }
-//        if (mmEA != TalonConfigs_MotionMagic.MotionMagicExpo_kA) { TalonConfigs_MotionMagic.MotionMagicExpo_kA = mmEA; pivotDirty = true; }
-//        if (mmEV != TalonConfigs_MotionMagic.MotionMagicExpo_kV) { TalonConfigs_MotionMagic.MotionMagicExpo_kV = mmEV; pivotDirty = true; }
-//
-//
-//        if (pivotDirty)
-//        {
-//            ApplyConfigs();
-//        }
+        var p = SmartDashboard.getNumber("Pivot.Configs.P", TalonConfigs_Slot0.kP);
+        var i = SmartDashboard.getNumber("Pivot.Configs.I", TalonConfigs_Slot0.kI);
+        var d = SmartDashboard.getNumber("Pivot.Configs.D", TalonConfigs_Slot0.kD);
+
+        var s = SmartDashboard.getNumber("Pivot.Configs.S", TalonConfigs_Slot0.kS);
+        var a = SmartDashboard.getNumber("Pivot.Configs.A", TalonConfigs_Slot0.kA);
+        var v = SmartDashboard.getNumber("Pivot.Configs.V", TalonConfigs_Slot0.kV);
+        var g = SmartDashboard.getNumber("Pivot.Configs.G", TalonConfigs_Slot0.kG);
+
+        var mmA = SmartDashboard.getNumber("Pivot.Configs.MMAccel", TalonConfigs_MotionMagic.MotionMagicAcceleration);
+        var mmC = SmartDashboard.getNumber("Pivot.Configs.MMCruise", TalonConfigs_MotionMagic.MotionMagicCruiseVelocity);
+        var mmJ = SmartDashboard.getNumber("Pivot.Configs.MMJerk", TalonConfigs_MotionMagic.MotionMagicJerk);
+        var mmEA = SmartDashboard.getNumber("Pivot.Configs.mmExpoA", TalonConfigs_MotionMagic.MotionMagicExpo_kA);
+        var mmEV = SmartDashboard.getNumber("Pivot.Configs.mmExpoV", TalonConfigs_MotionMagic.MotionMagicExpo_kV);
+
+
+
+        if (p != TalonConfigs_Slot0.kP) { TalonConfigs_Slot0.kP = p; pivotDirty = true; }
+        if (i != TalonConfigs_Slot0.kI) { TalonConfigs_Slot0.kI = i; pivotDirty = true; }
+        if (d != TalonConfigs_Slot0.kD) { TalonConfigs_Slot0.kD = d; pivotDirty = true; }
+
+        if (s != TalonConfigs_Slot0.kS) { TalonConfigs_Slot0.kS = s; pivotDirty = true; }
+        if (a != TalonConfigs_Slot0.kA) { TalonConfigs_Slot0.kA = a; pivotDirty = true; }
+        if (v != TalonConfigs_Slot0.kV) { TalonConfigs_Slot0.kV = v; pivotDirty = true; }
+        if (g != TalonConfigs_Slot0.kG) { TalonConfigs_Slot0.kG = g; pivotDirty = true; }
+
+        if (mmC != TalonConfigs_MotionMagic.MotionMagicCruiseVelocity) { TalonConfigs_MotionMagic.MotionMagicCruiseVelocity = mmC; pivotDirty = true; }
+        if (mmA != TalonConfigs_MotionMagic.MotionMagicAcceleration) { TalonConfigs_MotionMagic.MotionMagicAcceleration = mmA; pivotDirty = true; }
+        if (mmJ != TalonConfigs_MotionMagic.MotionMagicJerk) { TalonConfigs_MotionMagic.MotionMagicJerk = mmJ; pivotDirty = true; }
+        if (mmEA != TalonConfigs_MotionMagic.MotionMagicExpo_kA) { TalonConfigs_MotionMagic.MotionMagicExpo_kA = mmEA; pivotDirty = true; }
+        if (mmEV != TalonConfigs_MotionMagic.MotionMagicExpo_kV) { TalonConfigs_MotionMagic.MotionMagicExpo_kV = mmEV; pivotDirty = true; }
+
+
+        if (pivotDirty)
+        {
+            ApplyConfigs();
+        }
     }
 }
 

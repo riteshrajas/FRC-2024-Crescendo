@@ -107,8 +107,8 @@ public class RobotContainer
     {
         CreateSharedCommands();
 
-        autoChooser = AutoBuilder.buildAutoChooser();
         ConfigureAutoCommands();
+        autoChooser = AutoBuilder.buildAutoChooser();
         SmartDashboard.putData("Auto Chooser", autoChooser);
 
         SetDefaultCommands();
@@ -145,20 +145,14 @@ public class RobotContainer
 
     private void ConfigureAutoCommands()
     {
-        autoChooser.addOption("mid", drivetrain.getAutoPath("3 note middle") );
 
+        NamedCommands.registerCommand("Arm Score", Pose.Command_GoToPose(PoseManager.EPose.Speaker));
 
-        NamedCommands.registerCommand("Arm Score", Commands.parallel(
-                  Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Shoot_speaker)
-                , Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Shoot_speaker)));
+        NamedCommands.registerCommand("Arm Stow", Pose.Command_GoToPose(PoseManager.EPose.Stowed));
 
-        NamedCommands.registerCommand("Arm Stow", Commands.parallel(
-                  Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed)
-                , Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)));
-
-        NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence);
+        //NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence.withTimeout(3));
         NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
-        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker));
+        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker).withTimeout(0.5));
     }
     
     public Command GetAutonomousCommand()
@@ -208,6 +202,7 @@ public class RobotContainer
 
         Driver.leftTrigger().whileTrue(
                 // TODO: automatially decide the outtake type based on vision
+
                 Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp)
         );
 
@@ -247,13 +242,13 @@ public class RobotContainer
 
         Operator.back().whileTrue(Arm.Command_ManualArmControl());
 
-        //Operator.a().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Stowed));
+        Operator.a().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Stowed));
         Operator.b().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Intake));
         Operator.x().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Amp));
         Operator.y().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Speaker));
 
         //Operator.x().onTrue(Command_AmpSequence);
-        Operator.a().onTrue(Command_SlowFall);
+        //Operator.a().onTrue(Command_SlowFall);
 
 
         Operator.rightBumper().onTrue(Pose.Command_AutoPose());
@@ -275,14 +270,13 @@ public class RobotContainer
         // Operator.rightBumper().onTrue()
 
         // -- Scoring
-        // Operator.a().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed))); //stow
-        // Operator.b().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.shoot_speaker))); //shoot speaker
-        // Operator.x().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.amp))); // shoot amp
-        // Operator.y().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.trap))); // place trap
-
+        // Operator.a().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed), Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.stowed))); //stow
+        // Operator.b().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer), Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.shoot_speaker))); //shoot speaker
+        // Operator.x().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp), Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.amp))); // shoot amp
+        // Operator.y().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap), Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.trap))); // place trap
         // -- Climbing
-        // Operator.leftStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
-        // Operator.rightStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_secondpos), Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed)));
+        // Operator.leftStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos), Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.stowed)));
+        // Operator.rightStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_secondpos), Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.stowed)));
 
 
         // -- Vision
