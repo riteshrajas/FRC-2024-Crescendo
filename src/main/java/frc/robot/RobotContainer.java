@@ -21,7 +21,6 @@ import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import friarLib2.math.LookupTable;
-import friarLib2.vision.LimelightCamera;
 
 
 
@@ -48,14 +47,14 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     private final double MaxRotationsPerSecond = 0.75;
     private LookupTable ThrottleLut = new LookupTable.Normalized()
-            .AddValue(0.1, 0.0) // dead-band
-            .AddValue(0.35, 0.05)
-            .AddValue(0.75, 0.2);
+        .AddValue(0.1, 0.0) // dead-band
+        .AddValue(0.35, 0.05)
+        .AddValue(0.75, 0.2);
 
     private LookupTable TurnLut = new LookupTable.Normalized()
-            .AddValue(0.1, 0.0) // dead-band
-            .AddValue(0.35, 0.05)
-            .AddValue(0.75, 0.2);
+        .AddValue(0.1, 0.0) // dead-band
+        .AddValue(0.35, 0.05)
+        .AddValue(0.75, 0.2);
     
     // --------------------------------------------------------------------------------------------
     // -- Subsystems~
@@ -64,12 +63,6 @@ public class RobotContainer
     private final ArmSubsystem Arm = new ArmSubsystem();
     private final IntakeSubsystem Intake = new IntakeSubsystem();
     private final PoseManager Pose = new PoseManager(Arm, Intake);
-    
-    // --------------------------------------------------------------------------------------------
-    // -- Cameras
-    // --------------------------------------------------------------------------------------------
-    private LimelightCamera shooterCamera = new LimelightCamera();
-
     
     
     
@@ -85,9 +78,7 @@ public class RobotContainer
     public final SwerveRequest.RobotCentric AimRobot = new SwerveRequest.RobotCentric().withSteerRequestType(SwerveModule.SteerRequestType.MotionMagicExpo);
     private final Telemetry logger = new Telemetry(TunerConstants.kSpeedAt12VoltsMps);
 
-    private final double delay = .2;
 
-    private final double delay_2 = .05;
 
     // --------------------------------------------------------------------------------------------
     // -- Shared Commands
@@ -98,6 +89,8 @@ public class RobotContainer
     private Command Command_AmpSequence;
 
     private Command Command_SlowFall;
+
+
 
     // --------------------------------------------------------------------------------------------
     // -- Auto Chooser
@@ -129,25 +122,23 @@ public class RobotContainer
     private void CreateSharedCommands()
     {
         Command_IntakeNoteSequence =
-            Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)
+            Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed)
             .andThen(Intake.Command_PreIntakeSpinUp())
             .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake))
             .andThen(Intake.Command_IntakeNote())
             .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed));
 
         Command_AmpSequence =
-                Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
-                        .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.amp).withTimeout(delay).andThen(Arm.Command_SetPosition(
-                                ArmSubsystem.EArmPosition.amp)));
+            Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
+            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Amp).withTimeout(0.2)
+                           .andThen(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Amp)));
 
-//                Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
-//                        .andThen(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp).alongWith(Intake.Command_SetPivotPosition(
-//                                IntakeSubsystem.EPivotPosition.amp)));
 
         Command_SlowFall =
-                Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)
-                        .withTimeout(delay_2).andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)).andThen(Intake.Command_SetPivotPosition(
-                              IntakeSubsystem.EPivotPosition.Stowed));
+            Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed).withTimeout(0.05)
+               .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake))
+               .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed));
+
 
     }
 
@@ -158,11 +149,11 @@ public class RobotContainer
 
 
         NamedCommands.registerCommand("Arm Score", Commands.parallel(
-                  Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_speaker)
+                  Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Shoot_speaker)
                 , Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Shoot_speaker)));
 
         NamedCommands.registerCommand("Arm Stow", Commands.parallel(
-                  Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)
+                  Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed)
                 , Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)));
 
         NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence);
@@ -180,7 +171,7 @@ public class RobotContainer
     private void SetDefaultCommands()
     {
         drivetrain.setDefaultCommand(drivetrain.applyRequest(this::GetDefaultDriveRequest)
-                .ignoringDisable(true));
+            .ignoringDisable(true));
     }
 
     
@@ -206,8 +197,7 @@ public class RobotContainer
         Driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
         Driver.b().whileTrue(drivetrain.applyRequest(() -> point.withModuleDirection(new Rotation2d(-Driver.getLeftY(), -Driver.getLeftX()))));
 
-        // reset the field-centric heading on left bumper press
-        Driver.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldRelative));
+        Driver.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldRelative).ignoringDisable(true));
 
         Driver.rightTrigger()
             .whileTrue(Command_IntakeNoteSequence)
@@ -259,10 +249,10 @@ public class RobotContainer
 
         //Operator.a().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Stowed));
         Operator.b().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Intake));
-       // Operator.x().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Amp));
+        Operator.x().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Amp));
         Operator.y().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Speaker));
 
-        Operator.x().onTrue(Command_AmpSequence);
+        //Operator.x().onTrue(Command_AmpSequence);
         Operator.a().onTrue(Command_SlowFall);
 
 
@@ -313,9 +303,9 @@ public class RobotContainer
         if (deflectionLut == 0)
         {
             return driveFieldCentric
-                    .withVelocityX(0)
-                    .withVelocityY(0)
-                    .withRotationalRate(DefaultDriveRotationRate());
+                .withVelocityX(0)
+                .withVelocityY(0)
+                .withRotationalRate(DefaultDriveRotationRate());
         }
 
         double finalX = x * deflectionLut * TunerConstants.kSpeedAt12VoltsMps;
@@ -333,16 +323,16 @@ public class RobotContainer
         if (RotationModeIsRobotCentric)
         {
             return driveFieldCentric
-                    .withVelocityX(-finalX)
-                    .withVelocityY(-finalY)
-                    .withRotationalRate(DefaultDriveRotationRate());
+                .withVelocityX(-finalX)
+                .withVelocityY(-finalY)
+                .withRotationalRate(DefaultDriveRotationRate());
         }
         else
         {
             return driveRobotCentric
-                    .withVelocityX(-finalX)
-                    .withVelocityY(-finalY)
-                    .withRotationalRate(DefaultDriveRotationRate());
+                .withVelocityX(-finalX)
+                .withVelocityY(-finalY)
+                .withRotationalRate(DefaultDriveRotationRate());
         }
     }
 
@@ -363,6 +353,6 @@ public class RobotContainer
         SmartDashboard.putNumber("FinalAngVel", Math.toRadians(finalAngVelocity));
         return finalAngVelocity * magicScalar;
     }
+
+
 }
-
-

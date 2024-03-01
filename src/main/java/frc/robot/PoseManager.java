@@ -20,6 +20,8 @@ public class PoseManager
     private ArmSubsystem Arm;
     private IntakeSubsystem Intake;
 
+
+
     public PoseManager(ArmSubsystem arm, IntakeSubsystem intake)
     {
         Arm = arm;
@@ -54,24 +56,36 @@ public class PoseManager
         if (pose == EPose.Stowed)
         {
             return Commands.parallel(
-                Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed),
+                Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed),
                 Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)
             );
         }
 
         if (pose == EPose.Intake)
         {
+//            return Commands.parallel(
+//                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed),
+//                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
+//            );
+
             return Commands.parallel(
-                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed),
-                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
+                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed),
+                    Commands.waitUntil(() -> Arm.GetArmPosition() > 0)
+                            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed))
             );
         }
 
         if (pose == EPose.Amp)
         {
+//            return Commands.parallel(
+//                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp),
+//                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.amp)
+//            );
+
             return Commands.parallel(
-                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp),
-                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.amp)
+                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Amp),
+                    Commands.waitUntil(() -> Intake.GetPivotPos() > 0)
+                            .andThen(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Amp))
             );
 
         }
@@ -79,7 +93,7 @@ public class PoseManager
         if (pose == EPose.Speaker)
         {
             return Commands.parallel(
-                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_speaker),
+                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Shoot_speaker),
                     Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Shoot_speaker)
             );
 
@@ -88,12 +102,13 @@ public class PoseManager
         if (pose == EPose.PreClimb)
         {
             return Commands.parallel(
-                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos),
+                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_firstpos),
                     Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)
             );
         }
 
         return Commands.none();
+
     }
 
 
@@ -101,5 +116,7 @@ public class PoseManager
     {
         return Command_GoToPose(GetPoseForCurrentTag());
     }
+
+
 
 }

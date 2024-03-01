@@ -7,7 +7,6 @@ import com.ctre.phoenix6.controls.*;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -23,14 +22,14 @@ public class ArmSubsystem extends SubsystemBase
     private double ManualArmControlTarget = 0;
 
     public enum EArmPosition {
-        stowed(0),
-        shoot_speaker(-6.9),
-        shoot_podium(0), //TODO: tune when added
-        shoot_wing(0), //TODO: tune when added
-        climb_firstpos(0),
-        climb_secondpos(0),
-        amp(-12.8),
-        trap(0);
+        Stowed(0),
+        Shoot_speaker(-6.9),
+        Shoot_podium(0), //TODO: tune when added
+        Shoot_wing(0), //TODO: tune when added
+        Climb_firstpos(0),
+        Climb_secondpos(0),
+        Amp(-12.8),
+        Trap(0);
 
         private final double Rotations;
 
@@ -52,12 +51,6 @@ public class ArmSubsystem extends SubsystemBase
     private final MotionMagicVoltage MotionMagicRequest = new MotionMagicVoltage(0);
 
 
-    @Override
-    public void initSendable(SendableBuilder builder)
-    {
-        super.initSendable(builder);
-    }
-
     public ArmSubsystem()
     {
         InitializeConfigs();
@@ -74,6 +67,8 @@ public class ArmSubsystem extends SubsystemBase
         ApplyConfigs();
         PublishConfigs();
     }
+
+    public double GetArmPosition() { return LeftMotor.getPosition().getValue(); }
 
     private void InitializeConfigs()
     {
@@ -139,7 +134,7 @@ public class ArmSubsystem extends SubsystemBase
 
     public Command Command_ZeroArmEncoder()
     {
-       return runOnce(() -> LeftMotor.setPosition(0));
+       return runOnce(() -> LeftMotor.setPosition(0)).ignoringDisable(true);
     }
 
     public Command Command_ManualArmControl()

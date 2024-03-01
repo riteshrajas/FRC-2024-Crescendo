@@ -6,11 +6,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import com.ctre.phoenix6.signals.GravityTypeValue;
-import com.revrobotics.*;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.util.sendable.SendableBuilder;
-import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.Constants;
@@ -28,8 +24,8 @@ public class IntakeSubsystem extends SubsystemBase {
         Stowed(0),
         Intake(-19.27),
         Shoot_speaker(-7.75),
-        amp(-33),
-        trap(0);
+        Amp(-33),
+        Trap(0);
 
         private final double Rotations;
 
@@ -54,25 +50,13 @@ public class IntakeSubsystem extends SubsystemBase {
     private static final double PivotTolerance = 15.0 / 360.0;
     private static final double TEMP_IntakeVoltage = 7;
 
-    private Timer rumbleTimer = new Timer();
-    private Timer autoOuttakeTimer = new Timer();
 
     private TalonFX PivotMotor;
-
-    private SparkPIDController IntakePID;
-//    private CANSparkFlex IntakeMotor;
     private TalonFX IntakeMotor;
-    private RelativeEncoder IntakeEncoder;
-//    private TalonFX IntakeMotor = new TalonFX(Constants.Intake.INTAKE_MOTOR_ID);
-
     private TalonFXConfiguration TalonConfigs;
     private Slot0Configs TalonConfigs_Slot0;
 
-    private VoltageConfigs TalonConfigs_Voltage;
-
     private MotionMagicConfigs TalonConfigs_MotionMagic;
-
-    private DigitalInput VexLimitSwitch;
 
 
     private final MotionMagicVoltage MotionMagicRequest = new MotionMagicVoltage(0);
@@ -81,23 +65,10 @@ public class IntakeSubsystem extends SubsystemBase {
 
     private final DutyCycleOut DutyCycleRequest = new DutyCycleOut(0);
 
-    @Override
-    public void initSendable(SendableBuilder builder) {
-        super.initSendable(builder);
-    }
-
-//    private final VelocityDutyCycle Velocity = new VelocityDutyCycle(0);
-
     public IntakeSubsystem() {
         InitializeConfigs();
         PivotMotor = CreateMotor(Constants.CanivoreBusIDs.IntakePivot.GetID());
-
-//        IntakeMotor = CreateSparkMotor(Constants.RioCanBusIDs.IntakeMotor.ordinal());
-//        IntakePID = CreatePID(IntakeMotor);
-//        IntakeEncoder = IntakeMotor.getEncoder();
-//        IntakeMotor.burnFlash();
         IntakeMotor = CreateMotor(Constants.CanivoreBusIDs.IntakeMotor.GetID());
-        VexLimitSwitch = new DigitalInput(0);
 
         ApplyConfigs();
         PublishConfigs();
@@ -105,11 +76,15 @@ public class IntakeSubsystem extends SubsystemBase {
         PivotMotor.setControl(MotionMagicRequest.withPosition(EPivotPosition.Stowed.Rotations));
     }
 
+    public double GetPivotPos()
+    {
+        return PivotMotor.getPosition().getValue();
+    }
+
     private void InitializeConfigs() {
         TalonConfigs = new TalonFXConfiguration();
         TalonConfigs_Slot0 = TalonConfigs.Slot0;
         TalonConfigs_MotionMagic = TalonConfigs.MotionMagic;
-//        TalonConfigs)
 
 
         TalonConfigs_Slot0.kP = 10;
@@ -130,8 +105,6 @@ public class IntakeSubsystem extends SubsystemBase {
         TalonConfigs_MotionMagic.MotionMagicExpo_kV = 0.1;
 
         MotionMagicRequest.Slot = 0;
-//        Voltagerequest
-
     }
 
 
@@ -150,38 +123,6 @@ public class IntakeSubsystem extends SubsystemBase {
         System.out.println("Configs Applied!");
     }
 
-    private CANSparkFlex CreateSparkMotor(int motorId) {
-        CANSparkFlex motor = new CANSparkFlex(motorId, CANSparkLowLevel.MotorType.kBrushless);
-
-        motor.restoreFactoryDefaults();
-        motor.setIdleMode(CANSparkBase.IdleMode.kBrake);
-        motor.setInverted(true);
-
-        return motor;
-    }
-
-    private SparkPIDController CreatePID(CANSparkFlex motor) {
-        var pid = motor.getPIDController();
-
-        pid.setP(0.0007);
-        pid.setI(0.0000000);
-        pid.setD(0.023);
-        pid.setIZone(0);
-        pid.setFF(0.000015);
-        pid.setOutputRange(-1, 1);
-
-//        pid.setSmartMotionMaxVelocity(1000, 0);
-//        pid.setSmartMotionMaxAccel(500, 0);
-//        pid.setSmartMotionMinOutputVelocity(0, 0);
-//        pid.setSmartMotionAllowedClosedLoopError(0.0021, 0);
-
-
-        return pid;
-    }
-
-    /*
-    Command for setting the pivot of the intake using motion magic foc
-    */
     public Command Command_SetPivotPosition(EPivotPosition position) { //Controls the pivot of the intake
         return run(() ->
         {
@@ -203,14 +144,10 @@ public class IntakeSubsystem extends SubsystemBase {
         // TODO: This should be a startEnd command that stops the motor when it finishes in case the command gets interrupted,
         //       but we can't do that right now due to how the intake and arm subsystems are divided up. Until then we'll just
         //       spin up the wheels and rely on the invoking command sequence to stop the intake.
-        return
-            runOnce( () ->
-                     {
-                         IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
-//                         IntakePID.setReference(TEMP_IntakeVoltage, CANSparkBase.ControlType.kVoltage) );
-
-                     });
-//
+        return runOnce( () ->
+             {
+                 IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
+             });
     }
 
     public Command Command_IntakeNote()
@@ -225,11 +162,8 @@ public class IntakeSubsystem extends SubsystemBase {
                 {
                     currentSpikeCount.set(0);
                     lastCurrent.set(IntakeMotor.getStatorCurrent().getValue());
-//                    lastCurrent.set(IntakeMotor.getOutputCurrent();
 
                     //SmartDashboard.putNumber("Intake.TargetVelocity", 2000);
-                    //IntakePID.setReference(2000, CANSparkBase.ControlType.kVelocity);
-//                    IntakePID.setReference(TEMP_IntakeVoltage, CANSparkBase.ControlType.kVoltage);
                     IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
                 },
                 () -> IntakeMotor.stopMotor()
@@ -257,32 +191,10 @@ public class IntakeSubsystem extends SubsystemBase {
                 () ->
                 {
                     //SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPM);
-                    //IntakePID.setReference(outtakeType.RPM, CANSparkBase.ControlType.kVelocity);
-//                    IntakePID.setReference(12, CANSparkBase.ControlType.kVoltage);
                     IntakeMotor.setControl(DutyCycleRequest.withOutput(-0.75));
                 },
                 () -> IntakeMotor.stopMotor()
         );
-    }
-
-    public Command Command_OuttakeAuto(EOutakeType outtakeType)
-    {
-        return startEnd(
-                () ->
-                {
-                    //SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPM);
-                    //IntakePID.setReference(outtakeType.RPM, CANSparkBase.ControlType.kVelocity);
-//                    IntakePID.setReference(12, CANSparkBase.ControlType.kVoltage);
-                    IntakeMotor.setControl(DutyCycleRequest.withOutput(-0.75));
-                    autoOuttakeTimer.start();
-                },
-                () ->
-                {
-                    IntakeMotor.stopMotor();
-                    autoOuttakeTimer.stop();
-                    autoOuttakeTimer.reset();
-                }
-        ).until(() -> autoOuttakeTimer.hasElapsed(0.5));
     }
 
 
@@ -294,13 +206,14 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public Command Command_ZeroPivotEncoder()
     {
-        return runOnce(() -> PivotMotor.setPosition(0));
+        return runOnce(() -> PivotMotor.setPosition(0))
+                .ignoringDisable(true);
     }
 
     public void periodic()
     {
-//        SmartDashboard.putNumber("Intake.PivotPosition", PivotMotor.getPosition().getValue());
-//        SmartDashboard.putNumber("Intake.ActualVelocity", IntakeEncoder.getVelocity());
+        SmartDashboard.putNumber("Intake.PivotPosition", PivotMotor.getPosition().getValue());
+        //SmartDashboard.putNumber("Intake.ActualVelocity", PivotMotor.getVelocity().getValue());
         SmartDashboard.putNumber("Intake.ActualCurrent", IntakeMotor.getStatorCurrent().getValue());
 
         UpdateConfigs();
