@@ -16,16 +16,16 @@
     },
     {
       "anchor": {
-        "x": 2.4733924503512332,
-        "y": 6.5463576290918635
+        "x": 2.625633325446393,
+        "y": 7.003080254377342
       },
       "prevControl": {
-        "x": 1.9245094547762385,
-        "y": 6.5813927139157995
+        "x": 2.0767503298713983,
+        "y": 7.038115339201278
       },
       "nextControl": {
-        "x": 2.693903321695415,
-        "y": 6.5322824670911706
+        "x": 2.8461441967905747,
+        "y": 6.989005092376649
       },
       "isLocked": false,
       "linkedName": null
@@ -65,24 +65,6 @@
               "data": {
                 "name": "Intake Note"
               }
-            },
-            {
-              "type": "wait",
-              "data": {
-                "waitTime": 0.1
-              }
-            },
-            {
-              "type": "named",
-              "data": {
-                "name": "stop Intake motors"
-              }
-            },
-            {
-              "type": "named",
-              "data": {
-                "name": "Arm Score"
-              }
             }
           ]
         }
@@ -90,8 +72,8 @@
     }
   ],
   "globalConstraints": {
-    "maxVelocity": 3.0,
-    "maxAcceleration": 2.0,
+    "maxVelocity": 2.0,
+    "maxAcceleration": 1.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0
   },

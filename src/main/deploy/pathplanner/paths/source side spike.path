@@ -3,41 +3,41 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.091513737949015,
-        "y": 4.414985377759629
+        "x": 0.9095172036497934,
+        "y": 4.568394521404429
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.091513737949015,
-        "y": 3.9149853777596286
+        "x": 1.9095172036497938,
+        "y": 4.068394521404429
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.262597392527166,
-        "y": 4.028527771748839
+        "x": 2.4684941677575676,
+        "y": 4.075047380863993
       },
       "prevControl": {
-        "x": 2.3211515752560734,
-        "y": 3.993395262111494
+        "x": 2.452429678067201,
+        "y": 4.0086785800653
       },
       "nextControl": {
-        "x": 2.208519785675189,
-        "y": 4.060974335860025
+        "x": 2.486919029582604,
+        "y": 4.151167818411573
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.091513737949015,
-        "y": 4.414985377759629
+        "x": 0.9095172036497934,
+        "y": 4.568394521404429
       },
       "prevControl": {
-        "x": 1.6185013825091832,
-        "y": 4.262744502664468
+        "x": 1.436504848209962,
+        "y": 4.416153646309268
       },
       "nextControl": null,
       "isLocked": false,
@@ -52,10 +52,28 @@
     }
   ],
   "constraintZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "New Event Marker",
+      "waypointRelativePos": 0,
+      "command": {
+        "type": "sequential",
+        "data": {
+          "commands": [
+            {
+              "type": "named",
+              "data": {
+                "name": "Intake Note"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
   "globalConstraints": {
-    "maxVelocity": 5.18,
-    "maxAcceleration": 2.5,
+    "maxVelocity": 2.0,
+    "maxAcceleration": 1.5,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0
   },
@@ -67,5 +85,5 @@
   "reversed": false,
   "folder": null,
   "previewStartingState": null,
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }
