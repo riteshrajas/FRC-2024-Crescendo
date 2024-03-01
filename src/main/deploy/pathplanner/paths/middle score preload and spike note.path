@@ -1,0 +1,101 @@
+{
+  "version": 1.0,
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 1.47,
+        "y": 5.555088802485298
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 2.401194487210655,
+        "y": 5.550936522700434
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 2.168910700160914,
+        "y": 5.555088802485298
+      },
+      "prevControl": {
+        "x": 2.531946633080141,
+        "y": 5.539225686154654
+      },
+      "nextControl": {
+        "x": 2.1477031691736435,
+        "y": 5.556015480812789
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.4719329438658892,
+        "y": 5.555088802485298
+      },
+      "prevControl": {
+        "x": 1.4662605074140238,
+        "y": 5.574358195791997
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.85,
+      "rotationDegrees": 0.0,
+      "rotateFast": false
+    }
+  ],
+  "constraintZones": [],
+  "eventMarkers": [
+    {
+      "name": "Intake",
+      "waypointRelativePos": 0,
+      "command": {
+        "type": "sequential",
+        "data": {
+          "commands": [
+            {
+              "type": "named",
+              "data": {
+                "name": "Intake Note"
+              }
+            },
+            {
+              "type": "named",
+              "data": {
+                "name": "stop Intake motors"
+              }
+            },
+            {
+              "type": "named",
+              "data": {
+                "name": "Arm Score"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 2.5,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 175.0,
+    "rotateFast": false
+  },
+  "reversed": false,
+  "folder": null,
+  "previewStartingState": null,
+  "useDefaultConstraints": false
+}
