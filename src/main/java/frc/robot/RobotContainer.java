@@ -160,11 +160,11 @@ public class RobotContainer
         NamedCommands.registerCommand("Arm Score", Commands.parallel(
                   Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_speaker)
                 , Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Shoot_speaker)));
-        
+
         NamedCommands.registerCommand("Arm Stow", Commands.parallel(
                   Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed)
                 , Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)));
-        
+
         NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence);
         NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
         NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker));
