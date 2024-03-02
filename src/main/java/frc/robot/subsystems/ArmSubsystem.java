@@ -16,7 +16,7 @@ import frc.robot.RobotContainer;
 public class ArmSubsystem extends SubsystemBase
 {
     private static final boolean EnableRightMotor = true;
-    private static final boolean TunePID = false;
+    private static final boolean TunePID = true;
     private static final double ArmTolerance = 15.0 / 360.0;
 
     private double ManualArmControlTarget = 0;
@@ -26,7 +26,7 @@ public class ArmSubsystem extends SubsystemBase
         Shoot_speaker(-6.9),
         Shoot_podium(0), //TODO: tune when added
         Shoot_wing(0), //TODO: tune when added
-        Climb_FirstPos(-13.07),
+        Climb_FirstPos(-13.5),
         Climb_SecondPos(0),
         Amp(-12.8),
         Trap(0);
@@ -48,7 +48,7 @@ public class ArmSubsystem extends SubsystemBase
     private MotionMagicConfigs TalonConfigs_MotionMagic;
 
     // -- Control Requests
-    private final MotionMagicVoltage MotionMagicRequest = new MotionMagicVoltage(0);
+    private final MotionMagicVoltage MotionMagicRequest = new MotionMagicVoltage(0).withEnableFOC(false);
 
 
     public ArmSubsystem()

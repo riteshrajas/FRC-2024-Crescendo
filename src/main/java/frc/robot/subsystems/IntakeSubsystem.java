@@ -4,6 +4,7 @@ import com.ctre.phoenix6.controls.*;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
@@ -20,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class IntakeSubsystem extends SubsystemBase {
     public enum EPivotPosition {
         Stowed(0),
-        Intake(-18.75),
+        Intake(-18),
         Shoot_speaker(-7.75),
         Amp(-33),
         Trap(0);
@@ -33,8 +34,9 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public enum EOutakeType {
-        amp(-1000),
-        speaker(-3000),
+        amp(-20),
+        speaker(-60),
+
         trap(0);
 
         private final double RPM;
@@ -69,7 +71,6 @@ public class IntakeSubsystem extends SubsystemBase {
         PivotMotor = CreateMotor(Constants.CanivoreBusIDs.IntakePivot.GetID());
         IntakeMotor = CreateMotor(Constants.CanivoreBusIDs.IntakeMotor.GetID());
 
-        //TuneConfigs = IntakeConfigs;
         ApplyConfigs();
         PublishConfigs();
 
@@ -111,13 +112,14 @@ public class IntakeSubsystem extends SubsystemBase {
         }
         else
         {
-            slotConfigs.kP = 10;
+            configs.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+            slotConfigs.kP = 12;
             slotConfigs.kI = 0;
-            slotConfigs.kD = 0;
+            slotConfigs.kD = 0.08;
 
-            slotConfigs.kS = 0; // Static
+            slotConfigs.kS = 14; // Static
             slotConfigs.kA = 0; // Acceleration
-            slotConfigs.kV = 0; // Velocity
+            slotConfigs.kV = 0.25; // Velocity
             slotConfigs.kG = 0; // Gravity
 
             motionMagicConfigs.MotionMagicAcceleration = 0; // rps/s acceleration (0.5 seconds)
@@ -170,7 +172,8 @@ public class IntakeSubsystem extends SubsystemBase {
         //       spin up the wheels and rely on the invoking command sequence to stop the intake.
         return runOnce( () ->
              {
-                 IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
+//                 IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
+                 IntakeMotor.setControl(IntakeRequest.withVelocity(30));
              });
     }
 
@@ -189,6 +192,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
                     //SmartDashboard.putNumber("Intake.TargetVelocity", 2000);
                     IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
+//                    IntakeMotor.setControl(IntakeRequest.withVelocity(30));
                 },
                 () -> IntakeMotor.stopMotor()
             )
