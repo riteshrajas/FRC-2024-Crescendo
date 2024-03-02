@@ -91,7 +91,7 @@ public class PoseManager
         if (pose == EPose.PreClimb)
         {
             return Commands.parallel(
-                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_firstpos),
+                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_FirstPos),
                     Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)
             );
         }

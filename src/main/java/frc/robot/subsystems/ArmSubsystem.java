@@ -26,8 +26,8 @@ public class ArmSubsystem extends SubsystemBase
         Shoot_speaker(-6.9),
         Shoot_podium(0), //TODO: tune when added
         Shoot_wing(0), //TODO: tune when added
-        Climb_firstpos(0),
-        Climb_secondpos(0),
+        Climb_FirstPos(-13.07),
+        Climb_SecondPos(0),
         Amp(-12.8),
         Trap(0);
 

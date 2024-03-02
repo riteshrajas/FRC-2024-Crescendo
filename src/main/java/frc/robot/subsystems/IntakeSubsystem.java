@@ -1,8 +1,6 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.controls.*;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import com.ctre.phoenix6.signals.GravityTypeValue;
@@ -35,8 +33,8 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public enum EOutakeType {
-        amp(3000),
-        speaker(0),
+        amp(-1000),
+        speaker(-3000),
         trap(0);
 
         private final double RPM;
@@ -46,34 +44,38 @@ public class IntakeSubsystem extends SubsystemBase {
         }
     }
 
-    private static final boolean TunePID = false;
-    private static final double PivotTolerance = 15.0 / 360.0;
-    private static final double TEMP_IntakeVoltage = 7;
+    private TalonFXConfiguration TuneConfigs = null;
+    private final double PivotTolerance = 15.0 / 360.0;
+    private final double TEMP_IntakeVoltage = 7;
 
 
     private TalonFX PivotMotor;
     private TalonFX IntakeMotor;
-    private TalonFXConfiguration TalonConfigs;
-    private Slot0Configs TalonConfigs_Slot0;
-
-    private MotionMagicConfigs TalonConfigs_MotionMagic;
-
+    private TalonFXConfiguration PivotConfigs;
+    private TalonFXConfiguration IntakeConfigs;
 
     private final MotionMagicVoltage MotionMagicRequest = new MotionMagicVoltage(0);
+
+    private final VelocityTorqueCurrentFOC IntakeRequest = new VelocityTorqueCurrentFOC(0);
 
     private final VoltageOut VoltageRequest = new VoltageOut(0);
 
     private final DutyCycleOut DutyCycleRequest = new DutyCycleOut(0);
 
     public IntakeSubsystem() {
-        InitializeConfigs();
+        PivotConfigs = CreateConfigs(true);
+        IntakeConfigs = CreateConfigs(false);
+
         PivotMotor = CreateMotor(Constants.CanivoreBusIDs.IntakePivot.GetID());
         IntakeMotor = CreateMotor(Constants.CanivoreBusIDs.IntakeMotor.GetID());
 
+        //TuneConfigs = IntakeConfigs;
         ApplyConfigs();
         PublishConfigs();
 
         PivotMotor.setControl(MotionMagicRequest.withPosition(EPivotPosition.Stowed.Rotations));
+
+
     }
 
     public double GetPivotPos()
@@ -81,30 +83,52 @@ public class IntakeSubsystem extends SubsystemBase {
         return PivotMotor.getPosition().getValue();
     }
 
-    private void InitializeConfigs() {
-        TalonConfigs = new TalonFXConfiguration();
-        TalonConfigs_Slot0 = TalonConfigs.Slot0;
-        TalonConfigs_MotionMagic = TalonConfigs.MotionMagic;
+    private TalonFXConfiguration CreateConfigs(boolean isPivot) {
+        var configs = new TalonFXConfiguration();
+        var slotConfigs = configs.Slot0;
+        var motionMagicConfigs = configs.MotionMagic;
 
+        if (isPivot)
+        {
+            slotConfigs.kP = 10;
+            slotConfigs.kI = 0;
+            slotConfigs.kD = 0.2;
 
-        TalonConfigs_Slot0.kP = 10;
-        TalonConfigs_Slot0.kI = 0;
-        TalonConfigs_Slot0.kD = 0.2;
+            slotConfigs.kS = 0.35; // Static
+            slotConfigs.kA = 0.01; // Acceleration
+            slotConfigs.kV = 0.12; // Velocity
+            slotConfigs.kG = 0; // Gravity
 
-        TalonConfigs_Slot0.kS = 0.35; // Static
-        TalonConfigs_Slot0.kA = 0.01; // Acceleration
-        TalonConfigs_Slot0.kV = 0.12; // Velocity
-        TalonConfigs_Slot0.kG = 0; // Gravity
+            slotConfigs.withGravityType(GravityTypeValue.Arm_Cosine);
 
-        TalonConfigs_Slot0.withGravityType(GravityTypeValue.Arm_Cosine);
+            motionMagicConfigs.MotionMagicAcceleration = 300; // rps/s acceleration (0.5 seconds)
+            motionMagicConfigs.MotionMagicCruiseVelocity = 160; // rps cruise velocity
+            motionMagicConfigs.MotionMagicJerk = 1600; // rps/s^2 jerk (0.1 seconds)
+            motionMagicConfigs.MotionMagicExpo_kA = 0.1;
+            motionMagicConfigs.MotionMagicExpo_kV = 0.1;
 
-        TalonConfigs_MotionMagic.MotionMagicAcceleration = 300; // rps/s acceleration (0.5 seconds)
-        TalonConfigs_MotionMagic.MotionMagicCruiseVelocity = 160; // rps cruise velocity
-        TalonConfigs_MotionMagic.MotionMagicJerk = 1600; // rps/s^2 jerk (0.1 seconds)
-        TalonConfigs_MotionMagic.MotionMagicExpo_kA = 0.1;
-        TalonConfigs_MotionMagic.MotionMagicExpo_kV = 0.1;
+            MotionMagicRequest.Slot = 0;
+        }
+        else
+        {
+            slotConfigs.kP = 10;
+            slotConfigs.kI = 0;
+            slotConfigs.kD = 0;
 
-        MotionMagicRequest.Slot = 0;
+            slotConfigs.kS = 0; // Static
+            slotConfigs.kA = 0; // Acceleration
+            slotConfigs.kV = 0; // Velocity
+            slotConfigs.kG = 0; // Gravity
+
+            motionMagicConfigs.MotionMagicAcceleration = 0; // rps/s acceleration (0.5 seconds)
+            motionMagicConfigs.MotionMagicCruiseVelocity = 0; // rps cruise velocity
+            motionMagicConfigs.MotionMagicJerk = 0; // rps/s^2 jerk (0.1 seconds)
+            motionMagicConfigs.MotionMagicExpo_kA = 0;
+            motionMagicConfigs.MotionMagicExpo_kV = 0;
+
+            MotionMagicRequest.Slot = 0;
+        }
+        return configs;
     }
 
 
@@ -117,8 +141,8 @@ public class IntakeSubsystem extends SubsystemBase {
     private void ApplyConfigs() {
         var timeout = 0.05;
 
-        PivotMotor.getConfigurator().apply(TalonConfigs, timeout);
-        IntakeMotor.getConfigurator().apply(TalonConfigs, timeout);
+        PivotMotor.getConfigurator().apply(PivotConfigs, timeout);
+        IntakeMotor.getConfigurator().apply(IntakeConfigs, timeout);
 
         System.out.println("Configs Applied!");
     }
@@ -190,8 +214,9 @@ public class IntakeSubsystem extends SubsystemBase {
         return startEnd(
                 () ->
                 {
-                    //SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPM);
-                    IntakeMotor.setControl(DutyCycleRequest.withOutput(-0.75));
+                    SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPM);
+                    //IntakeMotor.setControl(DutyCycleRequest.withOutput(-0.75));
+                    IntakeMotor.setControl(IntakeRequest.withVelocity(outtakeType.RPM));
                 },
                 () -> IntakeMotor.stopMotor()
         );
@@ -221,88 +246,68 @@ public class IntakeSubsystem extends SubsystemBase {
 
     private void PublishConfigs()
     {
-        if (!TunePID) { return; }
-
-//        SmartDashboard.putNumber("Intake.Configs.P", IntakePID.getP());
-//        SmartDashboard.putNumber("Intake.Configs.I", IntakePID.getI());
-//        SmartDashboard.putNumber("Intake.Configs.D", IntakePID.getD());
+        if (TuneConfigs == null) { return; }
 
         SmartDashboard.putNumber("Pivot.Target", 0);
         SmartDashboard.putNumber("Pivot.Position", 0);
         SmartDashboard.putNumber("Pivot.Error", 0);
 
-        SmartDashboard.putNumber("Pivot.Configs.P", TalonConfigs_Slot0.kP);
-        SmartDashboard.putNumber("Pivot.Configs.I", TalonConfigs_Slot0.kI);
-        SmartDashboard.putNumber("Pivot.Configs.D", TalonConfigs_Slot0.kD);
+        SmartDashboard.putNumber("Pivot.Configs.P", TuneConfigs.Slot0.kP);
+        SmartDashboard.putNumber("Pivot.Configs.I", TuneConfigs.Slot0.kI);
+        SmartDashboard.putNumber("Pivot.Configs.D", TuneConfigs.Slot0.kD);
 
-        SmartDashboard.putNumber("Pivot.Configs.S", TalonConfigs_Slot0.kS);
-        SmartDashboard.putNumber("Pivot.Configs.A", TalonConfigs_Slot0.kA);
-        SmartDashboard.putNumber("Pivot.Configs.V", TalonConfigs_Slot0.kV);
-        SmartDashboard.putNumber("Pivot.Configs.G", TalonConfigs_Slot0.kG);
+        SmartDashboard.putNumber("Pivot.Configs.S", TuneConfigs.Slot0.kS);
+        SmartDashboard.putNumber("Pivot.Configs.A", TuneConfigs.Slot0.kA);
+        SmartDashboard.putNumber("Pivot.Configs.V", TuneConfigs.Slot0.kV);
+        SmartDashboard.putNumber("Pivot.Configs.G", TuneConfigs.Slot0.kG);
 
-        SmartDashboard.putNumber("Pivot.Configs.MMCruise", TalonConfigs_MotionMagic.MotionMagicCruiseVelocity);
-        SmartDashboard.putNumber("Pivot.Configs.MMAccel", TalonConfigs_MotionMagic.MotionMagicAcceleration);
-        SmartDashboard.putNumber("Pivot.Configs.MMJerk", TalonConfigs_MotionMagic.MotionMagicJerk);
-        SmartDashboard.putNumber("Pivot.Configs.MMExpoA", TalonConfigs_MotionMagic.MotionMagicExpo_kA);
-        SmartDashboard.putNumber("Pivot.Configs.MMExpoV", TalonConfigs_MotionMagic.MotionMagicExpo_kV);
+        SmartDashboard.putNumber("Pivot.Configs.MMCruise", TuneConfigs.MotionMagic.MotionMagicCruiseVelocity);
+        SmartDashboard.putNumber("Pivot.Configs.MMAccel", TuneConfigs.MotionMagic.MotionMagicAcceleration);
+        SmartDashboard.putNumber("Pivot.Configs.MMJerk", TuneConfigs.MotionMagic.MotionMagicJerk);
+        SmartDashboard.putNumber("Pivot.Configs.MMExpoA", TuneConfigs.MotionMagic.MotionMagicExpo_kA);
+        SmartDashboard.putNumber("Pivot.Configs.MMExpoV", TuneConfigs.MotionMagic.MotionMagicExpo_kV);
     }
 
     private void UpdateConfigs()
     {
-        if (!TunePID) { return; }
+        if (TuneConfigs == null) { return; }
 
-        // -- Intake
-//        var intakeDirty = false;
-//        var intakeP = SmartDashboard.getNumber("Intake.Configs.P", IntakePID.getP());
-//        var intakeI = SmartDashboard.getNumber("Intake.Configs.I", IntakePID.getI());
-//        var intakeD = SmartDashboard.getNumber("Intake.Configs.D", IntakePID.getD());
+        var dirty = false;
 //
-//        if (intakeP != IntakePID.getP()) { IntakePID.setP(intakeP); intakeDirty = true; System.out.println("Set P"); }
-//        if (intakeI != IntakePID.getI()) { IntakePID.setI(intakeI); intakeDirty = true; System.out.println("Set I"); }
-//        if (intakeD != IntakePID.getD()) { IntakePID.setD(intakeD); intakeDirty = true; System.out.println("Set D"); }
-//
-//        if (intakeDirty)
-//        {
-//            IntakeMotor.burnFlash();
-//        }
+        var p = SmartDashboard.getNumber("Pivot.Configs.P", TuneConfigs.Slot0.kP);
+        var i = SmartDashboard.getNumber("Pivot.Configs.I", TuneConfigs.Slot0.kI);
+        var d = SmartDashboard.getNumber("Pivot.Configs.D", TuneConfigs.Slot0.kD);
 
-        // -- Pivot
-        var pivotDirty = false;
-//
-        var p = SmartDashboard.getNumber("Pivot.Configs.P", TalonConfigs_Slot0.kP);
-        var i = SmartDashboard.getNumber("Pivot.Configs.I", TalonConfigs_Slot0.kI);
-        var d = SmartDashboard.getNumber("Pivot.Configs.D", TalonConfigs_Slot0.kD);
+        var s = SmartDashboard.getNumber("Pivot.Configs.S", TuneConfigs.Slot0.kS);
+        var a = SmartDashboard.getNumber("Pivot.Configs.A", TuneConfigs.Slot0.kA);
+        var v = SmartDashboard.getNumber("Pivot.Configs.V", TuneConfigs.Slot0.kV);
+        var g = SmartDashboard.getNumber("Pivot.Configs.G", TuneConfigs.Slot0.kG);
 
-        var s = SmartDashboard.getNumber("Pivot.Configs.S", TalonConfigs_Slot0.kS);
-        var a = SmartDashboard.getNumber("Pivot.Configs.A", TalonConfigs_Slot0.kA);
-        var v = SmartDashboard.getNumber("Pivot.Configs.V", TalonConfigs_Slot0.kV);
-        var g = SmartDashboard.getNumber("Pivot.Configs.G", TalonConfigs_Slot0.kG);
-
-        var mmA = SmartDashboard.getNumber("Pivot.Configs.MMAccel", TalonConfigs_MotionMagic.MotionMagicAcceleration);
-        var mmC = SmartDashboard.getNumber("Pivot.Configs.MMCruise", TalonConfigs_MotionMagic.MotionMagicCruiseVelocity);
-        var mmJ = SmartDashboard.getNumber("Pivot.Configs.MMJerk", TalonConfigs_MotionMagic.MotionMagicJerk);
-        var mmEA = SmartDashboard.getNumber("Pivot.Configs.mmExpoA", TalonConfigs_MotionMagic.MotionMagicExpo_kA);
-        var mmEV = SmartDashboard.getNumber("Pivot.Configs.mmExpoV", TalonConfigs_MotionMagic.MotionMagicExpo_kV);
+        var mmA = SmartDashboard.getNumber("Pivot.Configs.MMAccel", TuneConfigs.MotionMagic.MotionMagicAcceleration);
+        var mmC = SmartDashboard.getNumber("Pivot.Configs.MMCruise", TuneConfigs.MotionMagic.MotionMagicCruiseVelocity);
+        var mmJ = SmartDashboard.getNumber("Pivot.Configs.MMJerk", TuneConfigs.MotionMagic.MotionMagicJerk);
+        var mmEA = SmartDashboard.getNumber("Pivot.Configs.mmExpoA", TuneConfigs.MotionMagic.MotionMagicExpo_kA);
+        var mmEV = SmartDashboard.getNumber("Pivot.Configs.mmExpoV", TuneConfigs.MotionMagic.MotionMagicExpo_kV);
 
 
 
-        if (p != TalonConfigs_Slot0.kP) { TalonConfigs_Slot0.kP = p; pivotDirty = true; }
-        if (i != TalonConfigs_Slot0.kI) { TalonConfigs_Slot0.kI = i; pivotDirty = true; }
-        if (d != TalonConfigs_Slot0.kD) { TalonConfigs_Slot0.kD = d; pivotDirty = true; }
+        if (p != TuneConfigs.Slot0.kP) { TuneConfigs.Slot0.kP = p; dirty = true; }
+        if (i != TuneConfigs.Slot0.kI) { TuneConfigs.Slot0.kI = i; dirty = true; }
+        if (d != TuneConfigs.Slot0.kD) { TuneConfigs.Slot0.kD = d; dirty = true; }
 
-        if (s != TalonConfigs_Slot0.kS) { TalonConfigs_Slot0.kS = s; pivotDirty = true; }
-        if (a != TalonConfigs_Slot0.kA) { TalonConfigs_Slot0.kA = a; pivotDirty = true; }
-        if (v != TalonConfigs_Slot0.kV) { TalonConfigs_Slot0.kV = v; pivotDirty = true; }
-        if (g != TalonConfigs_Slot0.kG) { TalonConfigs_Slot0.kG = g; pivotDirty = true; }
+        if (s != TuneConfigs.Slot0.kS) { TuneConfigs.Slot0.kS = s; dirty = true; }
+        if (a != TuneConfigs.Slot0.kA) { TuneConfigs.Slot0.kA = a; dirty = true; }
+        if (v != TuneConfigs.Slot0.kV) { TuneConfigs.Slot0.kV = v; dirty = true; }
+        if (g != TuneConfigs.Slot0.kG) { TuneConfigs.Slot0.kG = g; dirty = true; }
 
-        if (mmC != TalonConfigs_MotionMagic.MotionMagicCruiseVelocity) { TalonConfigs_MotionMagic.MotionMagicCruiseVelocity = mmC; pivotDirty = true; }
-        if (mmA != TalonConfigs_MotionMagic.MotionMagicAcceleration) { TalonConfigs_MotionMagic.MotionMagicAcceleration = mmA; pivotDirty = true; }
-        if (mmJ != TalonConfigs_MotionMagic.MotionMagicJerk) { TalonConfigs_MotionMagic.MotionMagicJerk = mmJ; pivotDirty = true; }
-        if (mmEA != TalonConfigs_MotionMagic.MotionMagicExpo_kA) { TalonConfigs_MotionMagic.MotionMagicExpo_kA = mmEA; pivotDirty = true; }
-        if (mmEV != TalonConfigs_MotionMagic.MotionMagicExpo_kV) { TalonConfigs_MotionMagic.MotionMagicExpo_kV = mmEV; pivotDirty = true; }
+        if (mmC != TuneConfigs.MotionMagic.MotionMagicCruiseVelocity) { TuneConfigs.MotionMagic.MotionMagicCruiseVelocity = mmC; dirty = true; }
+        if (mmA != TuneConfigs.MotionMagic.MotionMagicAcceleration) { TuneConfigs.MotionMagic.MotionMagicAcceleration = mmA; dirty = true; }
+        if (mmJ != TuneConfigs.MotionMagic.MotionMagicJerk) { TuneConfigs.MotionMagic.MotionMagicJerk = mmJ; dirty = true; }
+        if (mmEA != TuneConfigs.MotionMagic.MotionMagicExpo_kA) { TuneConfigs.MotionMagic.MotionMagicExpo_kA = mmEA; dirty = true; }
+        if (mmEV != TuneConfigs.MotionMagic.MotionMagicExpo_kV) { TuneConfigs.MotionMagic.MotionMagicExpo_kV = mmEV; dirty = true; }
 
 
-        if (pivotDirty)
+        if (dirty)
         {
             ApplyConfigs();
         }

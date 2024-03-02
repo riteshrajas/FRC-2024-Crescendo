@@ -55,14 +55,14 @@ public class RobotContainer
         .AddValue(0.1, 0.0) // dead-band
         .AddValue(0.35, 0.05)
         .AddValue(0.75, 0.2);
-    
+
     // --------------------------------------------------------------------------------------------
     // -- Subsystems~
     // --------------------------------------------------------------------------------------------
     public final SwerveSubsystem drivetrain = TunerConstants.DriveTrain;
-    private final ArmSubsystem Arm = new ArmSubsystem();
-    private final IntakeSubsystem Intake = new IntakeSubsystem();
-    private final PoseManager Pose = new PoseManager(Arm, Intake);
+    public final ArmSubsystem Arm = new ArmSubsystem();
+    public final IntakeSubsystem Intake = new IntakeSubsystem();
+    public final PoseManager Pose = new PoseManager(Arm, Intake);
     
     
     
@@ -81,18 +81,6 @@ public class RobotContainer
 
 
     // --------------------------------------------------------------------------------------------
-    // -- Shared Commands
-    // --------------------------------------------------------------------------------------------
-
-    private Command Command_IntakeNoteSequence;
-
-    private Command Command_AmpSequence;
-
-    private Command Command_SlowFall;
-
-
-
-    // --------------------------------------------------------------------------------------------
     // -- Auto Chooser
     // --------------------------------------------------------------------------------------------
     private final SendableChooser<Command> autoChooser;
@@ -105,11 +93,10 @@ public class RobotContainer
 
     public RobotContainer()
     {
-        CreateSharedCommands();
-
         ConfigureAutoCommands();
         autoChooser = AutoBuilder.buildAutoChooser();
         SmartDashboard.putData("Auto Chooser", autoChooser);
+        autoChooser.addOption("None", Commands.none());
 
         SetDefaultCommands();
         
@@ -119,38 +106,20 @@ public class RobotContainer
         drivetrain.registerTelemetry(logger::telemeterize);
    }
 
-    private void CreateSharedCommands()
+   Command Command_IntakeNoteSequence()
     {
-        Command_IntakeNoteSequence =
-            Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed)
-            .andThen(Intake.Command_PreIntakeSpinUp())
-            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake))
-            .andThen(Intake.Command_IntakeNote())
-            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed));
-
-        Command_AmpSequence =
-            Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
-            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Amp).withTimeout(0.2)
-                           .andThen(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Amp)));
-
-
-        Command_SlowFall =
-            Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed).withTimeout(0.05)
-               .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake))
-               .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed));
-
-
+        return Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed)
+          .andThen(Intake.Command_PreIntakeSpinUp())
+          .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake))
+          .andThen(Intake.Command_IntakeNote())
+          .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed));
     }
-
 
     private void ConfigureAutoCommands()
     {
-
         NamedCommands.registerCommand("Arm Score", Pose.Command_GoToPose(PoseManager.EPose.Speaker));
-
         NamedCommands.registerCommand("Arm Stow", Pose.Command_GoToPose(PoseManager.EPose.Stowed));
-
-        //NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence.withTimeout(3));
+        NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence().withTimeout(3));
         NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
         NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker).withTimeout(0.5));
     }
@@ -194,17 +163,14 @@ public class RobotContainer
         Driver.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldRelative).ignoringDisable(true));
 
         Driver.rightTrigger()
-            .whileTrue(Command_IntakeNoteSequence)
+            .whileTrue(Command_IntakeNoteSequence())
             .onFalse(Intake.Command_StopIntake() // Stop intake here is temporary until we can refactor the subsystems to make the intake motor separate from the pivot motor
             .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)));
 
 
 
-        Driver.leftTrigger().whileTrue(
-                // TODO: automatially decide the outtake type based on vision
-
-                Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp)
-        );
+        Driver.leftTrigger().whileTrue(Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker));
+        Driver.leftBumper().whileTrue(Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp));
 
 //        Driver.x().onTrue(Commands.run(() -> RotationModeIsRobotCentric = !RotationModeIsRobotCentric));
     }
@@ -247,9 +213,8 @@ public class RobotContainer
         Operator.x().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Amp));
         Operator.y().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Speaker));
 
-        //Operator.x().onTrue(Command_AmpSequence);
-        //Operator.a().onTrue(Command_SlowFall);
-
+        Operator.povUp().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_FirstPos));
+        Operator.povDown().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_SecondPos));
 
         Operator.rightBumper().onTrue(Pose.Command_AutoPose());
 
@@ -332,7 +297,7 @@ public class RobotContainer
 
     private double DefaultDriveRotationRate()
     {
-        if (Driver.getHID().getLeftBumper())
+        if (Driver.getHID().getRightBumper())
         {
             var target = Vision.GetBestTarget();
             if (target != null)
