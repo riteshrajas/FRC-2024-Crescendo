@@ -28,7 +28,7 @@ public class ArmSubsystem extends SubsystemBase
         Shoot_wing(0), //TODO: tune when added
         Climb_FirstPos(-13.5),
         Climb_SecondPos(0),
-        Amp(-12.8),
+        Amp(-13.1),
         Trap(0);
 
         private final double Rotations;

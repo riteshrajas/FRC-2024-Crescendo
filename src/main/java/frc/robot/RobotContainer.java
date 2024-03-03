@@ -218,7 +218,9 @@ public class RobotContainer
         Operator.povUp().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_FirstPos));
         Operator.povDown().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_SecondPos));
 
-        Operator.rightBumper().onTrue(Pose.Command_AutoPose());
+//        Operator.rightBumper().onTrue(Pose.Command_AutoPose());
+        Operator.rightBumper().whileTrue(Intake.Command_MoveNote(true));
+        Operator.leftBumper().whileTrue(Intake.Command_MoveNote(false));
 
 
 

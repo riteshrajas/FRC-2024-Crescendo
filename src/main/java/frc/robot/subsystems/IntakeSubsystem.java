@@ -6,14 +6,13 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.Constants;
 
 import com.ctre.phoenix6.configs.*;
-
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import frc.robot.RobotContainer;
 //*TODO: Find acutal poses, work out motor configurations, do commmands  and logic for moving pivot
 
 
@@ -23,7 +22,7 @@ public class IntakeSubsystem extends SubsystemBase {
         Stowed(0),
         Intake(-18),
         Shoot_speaker(-7.75),
-        Amp(-33),
+        Amp(-32.7),
         Trap(0);
 
         private final double Rotations;
@@ -39,10 +38,10 @@ public class IntakeSubsystem extends SubsystemBase {
 
         trap(0);
 
-        private final double RPM;
+        private final double RPS;
 
-        EOutakeType(double rpm) {
-            RPM = rpm;
+        EOutakeType(double rps) {
+            RPS = rps;
         }
     }
 
@@ -116,11 +115,11 @@ public class IntakeSubsystem extends SubsystemBase {
         else
         {
             configs.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-            slotConfigs.kP = 12;
+            slotConfigs.kP = 10;
             slotConfigs.kI = 0;
-            slotConfigs.kD = 0.08;
+            slotConfigs.kD = 0;
 
-            slotConfigs.kS = 14; // Static
+            slotConfigs.kS = 40; // Static
             slotConfigs.kA = 0; // Acceleration
             slotConfigs.kV = 0.25; // Velocity
             slotConfigs.kG = 0; // Gravity
@@ -206,6 +205,13 @@ public class IntakeSubsystem extends SubsystemBase {
                 SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
                 if (curCurrent - lastCurrent > 25)
                 {
+                    CommandScheduler.getInstance().schedule(
+                        Commands.startEnd(
+                                () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1),
+                                () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0)
+                        ).withTimeout(0.5));
+
+
                     currentSpikeCount++;
                 }
 
@@ -214,15 +220,23 @@ public class IntakeSubsystem extends SubsystemBase {
             });
     }
 
+    public Command Command_MoveNote(boolean forward)
+    {
+        return startEnd
+            (() -> IntakeMotor.setControl(IntakeRequest.withVelocity(forward ? -3 : 3)),
+            () -> IntakeMotor.stopMotor()
+        );
+    }
+
 
     public Command Command_Outtake(EOutakeType outtakeType)
     {
         return startEnd(
                 () ->
                 {
-                    SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPM);
+                    SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPS);
                     //IntakeMotor.setControl(DutyCycleRequest.withOutput(-0.75));
-                    IntakeMotor.setControl(IntakeRequest.withVelocity(outtakeType.RPM));
+                    IntakeMotor.setControl(IntakeRequest.withVelocity(outtakeType.RPS));
                 },
                 () -> IntakeMotor.stopMotor()
         );
