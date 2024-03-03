@@ -48,7 +48,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     private TalonFXConfiguration TuneConfigs = null;
     private final double PivotTolerance = 15.0 / 360.0;
-    private final double TEMP_IntakeVoltage = 7;
+    private final double TEMP_IntakeVoltage = 5;
 
 
     private TalonFX PivotMotor;
@@ -60,9 +60,12 @@ public class IntakeSubsystem extends SubsystemBase {
 
     private final VelocityTorqueCurrentFOC IntakeRequest = new VelocityTorqueCurrentFOC(0);
 
-    private final VoltageOut VoltageRequest = new VoltageOut(0);
+    private final VoltageOut VoltageRequest = new VoltageOut(0).withEnableFOC(true);
 
     private final DutyCycleOut DutyCycleRequest = new DutyCycleOut(0);
+
+    double lastCurrent = 0;
+    int currentSpikeCount = 0;
 
     public IntakeSubsystem() {
         PivotConfigs = CreateConfigs(true);
@@ -172,43 +175,42 @@ public class IntakeSubsystem extends SubsystemBase {
         //       spin up the wheels and rely on the invoking command sequence to stop the intake.
         return runOnce( () ->
              {
-//                 IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
-                 IntakeMotor.setControl(IntakeRequest.withVelocity(30));
+                 IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage));
+                 //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
              });
     }
 
     public Command Command_IntakeNote()
     {
-        AtomicReference<Double> lastCurrent = new AtomicReference<>((double) 0);
-        AtomicInteger currentSpikeCount = new AtomicInteger();
+
 
         return
             startEnd
             (
                 () ->
                 {
-                    currentSpikeCount.set(0);
-                    lastCurrent.set(IntakeMotor.getStatorCurrent().getValue());
+                    currentSpikeCount = 0;
+                    lastCurrent = IntakeMotor.getStatorCurrent().getValue();
 
                     //SmartDashboard.putNumber("Intake.TargetVelocity", 2000);
-                    IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage).withEnableFOC(true));
-//                    IntakeMotor.setControl(IntakeRequest.withVelocity(30));
+                    IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage));
+                    //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
                 },
                 () -> IntakeMotor.stopMotor()
             )
             .until(() ->
             {
-                SmartDashboard.putNumber("Intake.CurrentSpikeCount", currentSpikeCount.get());
+
 
                 double curCurrent = IntakeMotor.getStatorCurrent().getValue();
-//                double curCurrent = IntakeMotor.getOutputCurrent();
-                if (curCurrent - lastCurrent.get() > 25)
+                SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
+                if (curCurrent - lastCurrent > 25)
                 {
-                    currentSpikeCount.getAndIncrement();
+                    currentSpikeCount++;
                 }
 
-                lastCurrent.set(curCurrent);
-                return currentSpikeCount.get() >= 1;
+                lastCurrent = curCurrent;
+                return currentSpikeCount >= 1;
             });
     }
 
@@ -241,6 +243,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public void periodic()
     {
+        SmartDashboard.putNumber("Intake.CurrentSpikeCount", currentSpikeCount);
         SmartDashboard.putNumber("Intake.PivotPosition", PivotMotor.getPosition().getValue());
         //SmartDashboard.putNumber("Intake.ActualVelocity", PivotMotor.getVelocity().getValue());
         SmartDashboard.putNumber("Intake.ActualCurrent", IntakeMotor.getStatorCurrent().getValue());

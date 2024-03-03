@@ -1,5 +1,7 @@
 package frc.robot;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 import java.util.Set;
 
 public class Vision
@@ -56,9 +58,13 @@ public class Vision
                 if (bestTarget == null || Math.abs(target.tx) < Math.abs(bestTarget.tx))
                 {
                     bestTarget = target;
+
+                    SmartDashboard.putNumber("Vision.BestTargetID", bestTarget.fiducialID);
+                    SmartDashboard.putNumber("Vision.BestTargetTx", bestTarget.tx);
                 }
             }
         }
+
 
         return bestTarget;
     }

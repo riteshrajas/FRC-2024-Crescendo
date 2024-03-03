@@ -16,7 +16,7 @@ import frc.robot.RobotContainer;
 public class ArmSubsystem extends SubsystemBase
 {
     private static final boolean EnableRightMotor = true;
-    private static final boolean TunePID = true;
+    private static final boolean TunePID = false;
     private static final double ArmTolerance = 15.0 / 360.0;
 
     private double ManualArmControlTarget = 0;

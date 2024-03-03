@@ -97,6 +97,7 @@ public class RobotContainer
         autoChooser = AutoBuilder.buildAutoChooser();
         SmartDashboard.putData("Auto Chooser", autoChooser);
         autoChooser.addOption("None", Commands.none());
+        autoChooser.addOption("SimpleForward", Commands.run(() -> driveFieldCentric.withVelocityX(1)).withTimeout(2));
 
         SetDefaultCommands();
         
@@ -111,6 +112,7 @@ public class RobotContainer
         return Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed)
           .andThen(Intake.Command_PreIntakeSpinUp())
           .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake))
+          .andThen(Intake.Command_PreIntakeSpinUp().alongWith(Commands.waitSeconds(0.25)))
           .andThen(Intake.Command_IntakeNote())
           .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed));
     }
