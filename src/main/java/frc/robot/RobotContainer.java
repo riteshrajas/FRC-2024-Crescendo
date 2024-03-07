@@ -301,12 +301,22 @@ public class RobotContainer
 
     private double DefaultDriveRotationRate()
     {
-        if (Driver.getHID().getRightBumper())
+        if (Driver.getHID().getRightBumper()) //Dumb solution for note tracking but it works
         {
-            var target = Vision.GetBestTarget();
-            if (target != null)
+            if (LimelightHelpers.getCurrentPipelineIndex("") == 1)
             {
-                return target.tx * -0.1;
+                var target = Vision.GetBestNoteTarget();
+                if (target != null)
+                {
+                    return target.tx * -0.1;
+                }
+            }
+            else {
+                var target = Vision.GetBestTarget();
+                if (target != null)
+                {
+                    return target.tx * -0.1;
+                }
             }
         }
 

@@ -44,8 +44,7 @@ public class Vision
         }
     }
 
-    static public LimelightHelpers.LimelightTarget_Fiducial GetBestTarget()
-    {
+    static public LimelightHelpers.LimelightTarget_Fiducial GetBestTarget() {
         UpdateResults();
 
         LimelightHelpers.LimelightTarget_Fiducial bestTarget = null;
@@ -69,6 +68,20 @@ public class Vision
         return bestTarget;
     }
     //static public void GetDefaultPipeline(){PipelineNumber = 0;}
+
+    static  public LimelightHelpers.LimelightTarget_Detector GetBestNoteTarget()
+    {
+        LimelightHelpers.LimelightTarget_Detector bestNoteTarget = null;
+
+        for (LimelightHelpers.LimelightTarget_Detector target : LatestResults.targets_Detector)
+        {
+            if (bestNoteTarget == null || Math.abs(target.tx) < Math.abs(bestNoteTarget.tx))
+            {
+                bestNoteTarget = target;
+            }
+        }
+        return bestNoteTarget;
+    }
 
 
 }
