@@ -5,6 +5,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.revrobotics.*;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -13,14 +14,13 @@ import frc.robot.Constants;
 
 import com.ctre.phoenix6.configs.*;
 import frc.robot.RobotContainer;
-//*TODO: Find acutal poses, work out motor configurations, do commmands  and logic for moving pivot
 
 
 
 public class IntakeSubsystem extends SubsystemBase {
     public enum EPivotPosition {
         Stowed(0),
-        Intake(-18),
+        Intake(-19), //og pos = -18
         Shoot_speaker(-7.75),
         Amp(-32.7),
         Trap(0);
@@ -34,7 +34,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public enum EOutakeType {
         amp(-20),
-        speaker(-60),
+        speaker(-74), // known value = -60,  to testing value: 74
 
         trap(0);
 
@@ -52,6 +52,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
     private TalonFX PivotMotor;
     private TalonFX IntakeMotor;
+    private CANSparkFlex FeederMotor;
+    private SparkPIDController FeederPID;
     private TalonFXConfiguration PivotConfigs;
     private TalonFXConfiguration IntakeConfigs;
 
@@ -70,9 +72,11 @@ public class IntakeSubsystem extends SubsystemBase {
         PivotConfigs = CreateConfigs(true);
         IntakeConfigs = CreateConfigs(false);
 
+        FeederMotor = CreateSparkMotor(1);
+        FeederPID = CreatePID(FeederMotor);
         PivotMotor = CreateMotor(Constants.CanivoreBusIDs.IntakePivot.GetID());
         IntakeMotor = CreateMotor(Constants.CanivoreBusIDs.IntakeMotor.GetID());
-
+        FeederMotor.burnFlash();
         ApplyConfigs();
         PublishConfigs();
 
@@ -81,8 +85,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     }
 
-    public double GetPivotPos()
-    {
+    public double GetPivotPos() {
         return PivotMotor.getPosition().getValue();
     }
 
@@ -91,8 +94,7 @@ public class IntakeSubsystem extends SubsystemBase {
         var slotConfigs = configs.Slot0;
         var motionMagicConfigs = configs.MotionMagic;
 
-        if (isPivot)
-        {
+        if (isPivot) {
             slotConfigs.kP = 10;
             slotConfigs.kI = 0;
             slotConfigs.kD = 0.2;
@@ -111,9 +113,7 @@ public class IntakeSubsystem extends SubsystemBase {
             motionMagicConfigs.MotionMagicExpo_kV = 0.1;
 
             MotionMagicRequest.Slot = 0;
-        }
-        else
-        {
+        } else {
             configs.MotorOutput.NeutralMode = NeutralModeValue.Brake;
             slotConfigs.kP = 10;
             slotConfigs.kI = 0;
@@ -142,6 +142,30 @@ public class IntakeSubsystem extends SubsystemBase {
         return motor;
     }
 
+    private CANSparkFlex CreateSparkMotor(int motorId) {
+        CANSparkFlex motor = new CANSparkFlex(motorId, CANSparkLowLevel.MotorType.kBrushless);
+
+        motor.restoreFactoryDefaults();
+        motor.setIdleMode(CANSparkBase.IdleMode.kBrake);
+        motor.setInverted(true);
+
+        return motor;
+    }
+
+    private SparkPIDController CreatePID(CANSparkFlex motor) {
+        var pid = motor.getPIDController();
+
+        pid.setP(0.000325);
+        pid.setI(0.0000001);
+        pid.setD(0.01357);
+        pid.setIZone(0);
+        pid.setFF(0.000015);
+        pid.setOutputRange(-1, 1);
+
+        return pid;
+    }
+
+
     private void ApplyConfigs() {
         var timeout = 0.05;
 
@@ -151,6 +175,11 @@ public class IntakeSubsystem extends SubsystemBase {
         System.out.println("Configs Applied!");
     }
 
+    public boolean isOuttakeUpToSpeed()
+    {
+        return MathUtil.isNear(EOutakeType.speaker.RPS, IntakeMotor.getVelocity().getValue(), 1);
+    }
+
     public Command Command_SetPivotPosition(EPivotPosition position) { //Controls the pivot of the intake
         return run(() ->
         {
@@ -158,74 +187,95 @@ public class IntakeSubsystem extends SubsystemBase {
 
             PivotMotor.setControl(MotionMagicRequest.withPosition(position.Rotations));
         })
-        .until(() ->
-        {
-            double actualRotation = PivotMotor.getPosition().getValue();
-            return MathUtil.isNear(position.Rotations, actualRotation, PivotTolerance);
-        })
-        .andThen(() -> System.out.println("Pivot has reached it's target!"));
+                .until(() ->
+                {
+                    double actualRotation = PivotMotor.getPosition().getValue();
+                    return MathUtil.isNear(position.Rotations, actualRotation, PivotTolerance);
+                })
+                .andThen(() -> System.out.println("Pivot has reached it's target!"));
     }
 
 
-    public Command Command_PreIntakeSpinUp()
-    {
+    public Command Command_PreIntakeSpinUp() {
         // TODO: This should be a startEnd command that stops the motor when it finishes in case the command gets interrupted,
         //       but we can't do that right now due to how the intake and arm subsystems are divided up. Until then we'll just
         //       spin up the wheels and rely on the invoking command sequence to stop the intake.
-        return runOnce( () ->
-             {
-                 IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage));
-                 //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
-             });
+        return runOnce(() ->
+        {
+            IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage));
+            //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
+        });
     }
 
-    public Command Command_IntakeNote()
-    {
+    public Command Command_IntakeNote() {
 
 
         return
-            startEnd
-            (
-                () ->
-                {
-                    currentSpikeCount = 0;
-                    lastCurrent = IntakeMotor.getStatorCurrent().getValue();
+                startEnd
+                        (
+                                () ->
+                                {
+                                    currentSpikeCount = 0;
+                                    lastCurrent = IntakeMotor.getStatorCurrent().getValue();
 
-                    //SmartDashboard.putNumber("Intake.TargetVelocity", 2000);
-                    IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage));
-                    //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
-                },
-                () -> IntakeMotor.stopMotor()
-            )
-            .until(() ->
-            {
-
-
-                double curCurrent = IntakeMotor.getStatorCurrent().getValue();
-                SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
-                if (curCurrent - lastCurrent > 25)
-                {
-                    CommandScheduler.getInstance().schedule(
-                        Commands.startEnd(
-                                () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1),
-                                () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0)
-                        ).withTimeout(0.5));
+                                    //SmartDashboard.putNumber("Intake.TargetVelocity", 2000);
+                                    IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage));
+                                    //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
+                                },
+                                () -> IntakeMotor.stopMotor()
+                        )
+                        .until(() ->
+                        {
 
 
-                    currentSpikeCount++;
-                }
+                            double curCurrent = IntakeMotor.getStatorCurrent().getValue();
+                            SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
+                            if (curCurrent - lastCurrent > 25) {
+                                CommandScheduler.getInstance().schedule(
+                                        Commands.startEnd(
+                                                () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1),
+                                                () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0)
+                                        ).withTimeout(0.5));
 
-                lastCurrent = curCurrent;
-                return currentSpikeCount >= 1;
-            });
+
+                                currentSpikeCount++;
+                            }
+
+                            lastCurrent = curCurrent;
+                            return currentSpikeCount >= 1;
+                        });
     }
 
-    public Command Command_MoveNote(boolean forward)
+    public Command Command_MoveNote(boolean forward) {
+        return startEnd
+                (() ->
+                        {
+                            IntakeMotor.setControl(IntakeRequest.withVelocity(forward ? -3 : 3));
+                            FeederPID.setReference(forward ? -3 : 3, CANSparkBase.ControlType.kVelocity);
+                        },
+                        () ->
+                        {
+                            IntakeMotor.stopMotor();
+                            FeederMotor.stopMotor();
+                        }
+                );
+    }
+
+    public Command Command_Feed()
     {
         return startEnd
-            (() -> IntakeMotor.setControl(IntakeRequest.withVelocity(forward ? -3 : 3)),
-            () -> IntakeMotor.stopMotor()
-        );
+                (() ->
+                        {
+                            if (isOuttakeUpToSpeed())
+                            {
+                                FeederPID.setReference(3, CANSparkBase.ControlType.kVelocity);
+                            }
+                        },
+                        () ->
+                        {
+                            FeederMotor.stopMotor();
+                        }
+                );
     }
 
 

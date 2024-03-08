@@ -185,7 +185,7 @@ public class RobotContainer
     private void ConfigureOperatorBindings()
     {
         Operator.start().onTrue(Arm.Command_ZeroArmEncoder().alongWith(Intake.Command_ZeroPivotEncoder().ignoringDisable(true)));
-
+        Operator.rightTrigger().onTrue(Intake.Command_Feed());
 
         //Operator.a().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed));
         //Operator.b().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_speaker));
