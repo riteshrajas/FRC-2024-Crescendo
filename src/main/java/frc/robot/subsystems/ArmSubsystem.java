@@ -23,12 +23,12 @@ public class ArmSubsystem extends SubsystemBase
 
     public enum EArmPosition {
         Stowed(0),
-        Shoot_speaker(-6.9),
+        Shoot_speaker(-24.7),
         Shoot_podium(0), //TODO: tune when added
         Shoot_wing(0), //TODO: tune when added
-        Climb_FirstPos(-13.5),
+        Climb_FirstPos(-46.9),
         Climb_SecondPos(0),
-        Amp(-13.1),
+        Amp(-33.85), // OG = -13.1
         Trap(0);
 
         private final double Rotations;
@@ -145,7 +145,7 @@ public class ArmSubsystem extends SubsystemBase
                     double y = RobotContainer.Operator.getLeftY() * 0.1;
                     if (Math.abs(y) < 0.1) { return; }
 
-                    ManualArmControlTarget = MathUtil.clamp(ManualArmControlTarget + y, -13, 0);
+                    ManualArmControlTarget = MathUtil.clamp(ManualArmControlTarget + y, -45, 0);
                     LeftMotor.setControl(MotionMagicRequest.withPosition(ManualArmControlTarget));
                 }));
     }

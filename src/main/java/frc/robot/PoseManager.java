@@ -28,7 +28,7 @@ public class PoseManager
         Intake = intake;
     }
 
-    private EPose GetPoseForCurrentTag()
+    public EPose GetPoseForCurrentTag()
     {
         var target = Vision.GetBestTarget();
         if (target == null) { return EPose.None; }
@@ -101,9 +101,9 @@ public class PoseManager
     }
 
 
-    public Command Command_AutoPose()
-    {
-        return Command_GoToPose(GetPoseForCurrentTag());
-    }
+//    public Command Command_AutoPose()
+//    {
+//        return Command_GoToPose(GetPoseForCurrentTag());
+//    }
 
 }

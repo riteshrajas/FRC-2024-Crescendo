@@ -1,11 +1,23 @@
 package frc.robot;
 
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import friarLib2.vision.IVisionCamera;
+import friarLib2.vision.LimelightCamera;
+import friarLib2.vision.utility.PixelToAngle;
 
 import java.util.Set;
 
 public class Vision
 {
+
+    static private final PixelToAngle AngleConverter = new PixelToAngle(320, 420, 54, 41);
+    static private final double HeightOfCam = 0;
+    static private final double AngleOfCam = 0;
+    static public double HeightOfTarget = 0;
+
+    static public double LastDist = 0; // Returns if no target
+
     static private final Set<Integer> ValidTags = Set.of
         (
               1, 2       // Blue Source
@@ -30,10 +42,9 @@ public class Vision
         //Amp
     //}
 
-    static public void Periodic()
-    {
-        ResultsAreStale = true;
-    }
+    static public void Periodic() {ResultsAreStale = true;}
+
+//
 
     static private void UpdateResults()
     {
@@ -83,5 +94,21 @@ public class Vision
         return bestNoteTarget;
     }
 
+//    public static double GetMetersFromTarget()
+//    {
+//        SetTargetHeight();
+//        if (GetBestTarget() != null)
+//        {
+//            double a2 = GetBestTarget().ty;
+//            double a1 = AngleOfCam;
+//
+//            double h1 = HeightOfCam;
+//            double h2 = HeightOfTarget;
+//
+//            LastDist = (h2 - h1) / Math.tan(Math.toRadians(a1 + a2));
+//        }
+//
+//        return LastDist;
+//    }
 
 }

@@ -74,6 +74,8 @@ public class Robot extends TimedRobot
 
         SmartDashboard.putNumber("Operator POV", RobotContainer.Operator.getHID().getPOV());
 
+        //SmartDashboard.putNumber("Distance from target", Vision.GetMetersFromTarget());
+
         // -- Output the robot orientation to the dashboard
         //SmartDashboard.putNumber("Robot Yaw", IMU.getRobotYaw().getDegrees());
         SmartDashboard.putNumber("Robot Yaw", m_robotContainer.drivetrain.getPigeon2().getYaw().getValue());

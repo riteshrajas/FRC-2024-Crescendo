@@ -14,15 +14,16 @@ import frc.robot.Constants;
 
 import com.ctre.phoenix6.configs.*;
 import frc.robot.RobotContainer;
+//*TODO: Find acutal poses, work out motor configurations, do commmands  and logic for moving pivot
 
 
 
 public class IntakeSubsystem extends SubsystemBase {
     public enum EPivotPosition {
         Stowed(0),
-        Intake(-19), //og pos = -18
-        Shoot_speaker(-7.75),
-        Amp(-32.7),
+        Intake(-18.42), //og pos = -18 24.7
+        Shoot_speaker(10.28),
+        Amp(-10), // -33.7
         Trap(0);
 
         private final double Rotations;

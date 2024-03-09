@@ -20,6 +20,8 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.LimelightHelpers;
+import frc.robot.Vision;
 import frc.robot.generated.TunerConstants;
 import friarLib2.utility.Vector3309;
 import friarLib2.vision.VisionIO;
@@ -32,6 +34,14 @@ public class SwerveSubsystem extends SwerveDrivetrain implements Subsystem {
     private static final double kSimLoopPeriod = 0.005; // 5 ms
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
+
+    enum EDirection
+    {
+        Forward,
+        Backward,
+        Right,
+        Left
+    }
 
     private final SwerveRequest.ApplyChassisSpeeds autoRequest = new SwerveRequest.ApplyChassisSpeeds();
 
@@ -100,6 +110,7 @@ public class SwerveSubsystem extends SwerveDrivetrain implements Subsystem {
         });
         m_simNotifier.startPeriodic(kSimLoopPeriod);
     }
+
 
 }
 

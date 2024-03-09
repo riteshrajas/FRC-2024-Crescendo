@@ -10,6 +10,7 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -88,8 +89,7 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     // -- State
     // --------------------------------------------------------------------------------------------
-    private boolean RotationModeIsRobotCentric = true;
-
+    private boolean RotationModeIsRobotCentric = false;
 
     public RobotContainer()
     {
@@ -107,6 +107,61 @@ public class RobotContainer
         drivetrain.registerTelemetry(logger::telemeterize);
    }
 
+//   Command Command_AutoLineupSequence()
+//   {
+//
+//       var target = Vision.GetBestTarget();
+//
+//       double tX = 0.0;
+//       double tY = 0.0;
+//       Rotation2d yaw = new Rotation2d(tX, tY);
+//
+//       float distance = 0; // wanted dist
+//
+//       if (target != null)
+//       {
+//           if (distance != Vision.LastDist)
+//           {
+//               while (target.tx != tX)
+//               {
+//                   return drivetrain.applyRequest(() -> driveFieldCentric.withRotationalRate(-target.tx));
+//               }
+//           }
+//
+//       }
+//
+//       return drivetrain.applyRequest(() -> driveFieldCentric);
+//
+//   }
+
+   Command Command_TestLineup()
+   {
+       return Commands.runEnd(
+           () ->
+           {
+               var target = Vision.GetBestTarget();
+               if (target == null) { return;}
+
+               var pose = LimelightHelpers.getBotPose2d("");
+
+               double deltaX = pose.getX() - -6.45;
+               double deltaY = pose.getY() - 0;
+               double deltaT = pose.getRotation().getDegrees() - 90;
+
+               SmartDashboard.putNumber("AutoLineup.DeltaX", deltaX);
+               SmartDashboard.putNumber("AutoLineup.DeltaY", deltaY);
+               SmartDashboard.putNumber("AutoLineup.DeltaT", deltaT);
+
+               drivetrain.applyRequest(() -> driveFieldCentric
+                   .withVelocityX(deltaX)
+                   //.withVelocityY(deltaY)
+                   .withRotationalRate(deltaT));
+           },
+           () -> drivetrain.applyRequest(() -> brake), drivetrain
+       );
+
+   }
+
    Command Command_IntakeNoteSequence()
     {
         return Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed)
@@ -115,6 +170,13 @@ public class RobotContainer
           .andThen(Intake.Command_PreIntakeSpinUp().alongWith(Commands.waitSeconds(0.25)))
           .andThen(Intake.Command_IntakeNote())
           .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed));
+    }
+
+    public Command Command_AutoPose()
+    {
+        return Commands.runOnce(
+                () ->
+                        Pose.Command_GoToPose(Pose.GetPoseForCurrentTag()));
     }
 
     private void ConfigureAutoCommands()
@@ -139,9 +201,6 @@ public class RobotContainer
             .ignoringDisable(true));
     }
 
-    
-
-
     // --------------------------------------------------------------------------------------------
     // -- Driver
     // --------------------------------------------------------------------------------------------
@@ -159,10 +218,11 @@ public class RobotContainer
         Driver.povDownLeft().whileTrue(drivetrain.applyRequest(() -> driveFieldCentric.withVelocityX(-.5).withVelocityY(.5))); // Fine-tune control diagonally down and left
         Driver.povDownRight().whileTrue(drivetrain.applyRequest(() -> driveFieldCentric.withVelocityX(-.5).withVelocityY(-.5))); // Fine-tune control diagonally down and right
 
-        Driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        Driver.b().whileTrue(drivetrain.applyRequest(() -> point.withModuleDirection(new Rotation2d(-Driver.getLeftY(), -Driver.getLeftX()))));
+        //Driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
+        //Driver.b().whileTrue(drivetrain.applyRequest(() -> point.withModuleDirection(new Rotation2d(-Driver.getLeftY(), -Driver.getLeftX()))));
 
         Driver.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldRelative).ignoringDisable(true));
+        Driver.a().whileTrue(Command_TestLineup());
 
         Driver.rightTrigger()
             .whileTrue(Command_IntakeNoteSequence())
@@ -222,18 +282,18 @@ public class RobotContainer
         Operator.rightBumper().whileTrue(Intake.Command_MoveNote(true));
         Operator.leftBumper().whileTrue(Intake.Command_MoveNote(false));
 
-
+        Operator.rightTrigger().whileTrue(Command_AutoPose()); // Should now return pose for current tag
 
         // -- Intaking
 //        Operator.rightTrigger().whileTrue(
 //                Commands.parallel(
 //                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed),
-//                    Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.intake))
+//                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.intake))
 //                .andThen(Intake.Command_IntakeNote())
 //        );
         
 
-        // Operator.rightTrigger().onFalse(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.stowed));
+        // Operator.rightTrigger().onFalse(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.stowed));
 
         // -- Outtake
         // Operator.rightBumper().onTrue()
@@ -285,14 +345,14 @@ public class RobotContainer
 
         if (RotationModeIsRobotCentric)
         {
-            return driveFieldCentric
+            return driveRobotCentric
                 .withVelocityX(-finalX)
                 .withVelocityY(-finalY)
                 .withRotationalRate(DefaultDriveRotationRate());
         }
         else
         {
-            return driveRobotCentric
+            return driveFieldCentric
                 .withVelocityX(-finalX)
                 .withVelocityY(-finalY)
                 .withRotationalRate(DefaultDriveRotationRate());
@@ -326,6 +386,5 @@ public class RobotContainer
         SmartDashboard.putNumber("FinalAngVel", Math.toRadians(finalAngVelocity));
         return finalAngVelocity * magicScalar;
     }
-
 
 }
