@@ -57,6 +57,11 @@ public class RobotContainer
         .AddValue(0.35, 0.05)
         .AddValue(0.75, 0.2);
 
+    private DriverStation.Alliance DefaultAlliance = DriverStation.Alliance.Blue;
+
+    private DriverStation.Alliance CurrentAlliance = DriverStation.getAlliance()
+                                                                  .get();
+
     // --------------------------------------------------------------------------------------------
     // -- Subsystems~
     // --------------------------------------------------------------------------------------------
@@ -139,14 +144,24 @@ public class RobotContainer
        return Commands.runEnd(
            () ->
            {
+               double deltaX;
+               double deltaY;
+               double deltaT;
+
                var target = Vision.GetBestTarget();
                if (target == null) { return;}
 
                var pose = LimelightHelpers.getBotPose2d("");
 
-               double deltaX = pose.getX() - -6.45;
-               double deltaY = pose.getY() - 0;
-               double deltaT = pose.getRotation().getDegrees() - 90;
+               if (CurrentAlliance == DefaultAlliance)
+               {
+                   deltaX = pose.getX() - -6.45;
+               } else {
+                   deltaX = pose.getX() - 6.45;
+               }
+               deltaY = pose.getY() - 0;
+               deltaT = pose.getRotation()
+                            .getDegrees() - 90;
 
                SmartDashboard.putNumber("AutoLineup.DeltaX", deltaX);
                SmartDashboard.putNumber("AutoLineup.DeltaY", deltaY);
@@ -174,9 +189,7 @@ public class RobotContainer
 
     public Command Command_AutoPose()
     {
-        return Commands.runOnce(
-                () ->
-                        Pose.Command_GoToPose(Pose.GetPoseForCurrentTag()));
+        return Commands.runOnce(() -> Pose.Command_GoToPose(Pose.GetPoseForCurrentTag()));
     }
 
     private void ConfigureAutoCommands()
@@ -245,30 +258,11 @@ public class RobotContainer
     private void ConfigureOperatorBindings()
     {
         Operator.start().onTrue(Arm.Command_ZeroArmEncoder().alongWith(Intake.Command_ZeroPivotEncoder().ignoringDisable(true)));
+        Operator.back().whileTrue(Arm.Command_ManualArmControl());
+
         Operator.rightTrigger().onTrue(Intake.Command_Feed());
 
-        //Operator.a().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed));
-        //Operator.b().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_speaker));
-        //Operator.x().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp));
-        //Operator.y().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap));
 
-        //Operator.povDown().onTrue(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Intake));
-        //Operator.povRight().onTrue(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Shoot_speaker));
-        //Operator.povLeft().onTrue(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.amp));
-        //Operator.povUp().onTrue(Intake.Command_SetPivotPosition(IntakeSusbsystem.EPivotPosition.Stowed));
-
-        // -- Testing arm code
-
-
-        /**
-         * Zach-
-         *
-         *
-         * Testing using Limelight or Operator to set the robot pose/ arm & intake
-         * to certain spot
-         */
-
-        Operator.back().whileTrue(Arm.Command_ManualArmControl());
 
         Operator.a().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Stowed));
         Operator.b().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Intake));
@@ -276,42 +270,16 @@ public class RobotContainer
         Operator.y().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Speaker));
 
         Operator.povUp().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_FirstPos));
-        Operator.povDown().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_SecondPos));
+        Operator.povDown().onTrue(Arm.Command_Climb());
 
-//        Operator.rightBumper().onTrue(Pose.Command_AutoPose());
+        Operator.povRight().whileTrue(Arm.Command_HoldCoastMode());
+
+
+        // Operator.rightBumper().onTrue(Pose.Command_AutoPose());
         Operator.rightBumper().whileTrue(Intake.Command_MoveNote(true));
         Operator.leftBumper().whileTrue(Intake.Command_MoveNote(false));
 
         Operator.rightTrigger().whileTrue(Command_AutoPose()); // Should now return pose for current tag
-
-        // -- Intaking
-//        Operator.rightTrigger().whileTrue(
-//                Commands.parallel(
-//                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed),
-//                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.intake))
-//                .andThen(Intake.Command_IntakeNote())
-//        );
-        
-
-        // Operator.rightTrigger().onFalse(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.stowed));
-
-        // -- Outtake
-        // Operator.rightBumper().onTrue()
-
-        // -- Scoring
-        // Operator.a().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.stowed), Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.stowed))); //stow
-        // Operator.b().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.shoot_subwoofer), Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.shoot_speaker))); //shoot speaker
-        // Operator.x().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.amp), Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.amp))); // shoot amp
-        // Operator.y().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.trap), Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.trap))); // place trap
-        // -- Climbing
-        // Operator.leftStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_firstpos), Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.stowed)));
-        // Operator.rightStick().onTrue(Commands.parallel(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.climb_secondpos), Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.stowed)));
-
-
-        // -- Vision
-        // Operator.back().onTrue(LimelightVision.SetPipelineCommand(0).ignoringDisable(true));
-        //Operator.start().onTrue(LimelightVision.SetPipelineCommand(1).ignoringDisable(true));
-        // Operator.rightStick().onTrue(LimelightVision.SetPipelineCommand(2).ignoringDisable(true));
 
 
     }

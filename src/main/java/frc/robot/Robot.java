@@ -27,14 +27,10 @@ public class Robot extends TimedRobot
     private Command m_autonomousCommand;
     private RobotContainer m_robotContainer;
 
-    public boolean target = false;
-
 
     @Override
     public void robotInit()
     {
-        // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
-        // autonomous chooser on the dashboard.
         m_robotContainer = new RobotContainer();
 
         for (int port = 5800; port <= 5807; port++)
@@ -42,10 +38,9 @@ public class Robot extends TimedRobot
             PortForwarder.add(port, "10.33.9.11", port);
         }
 
-        CameraServer.startAutomaticCapture();
+        //CameraServer.startAutomaticCapture();
 
         m_robotContainer.drivetrain.getDaqThread().setThreadPriority(99);
-
     }
 
     /**
@@ -72,12 +67,7 @@ public class Robot extends TimedRobot
         SmartDashboard.putNumber("Target Ty", LimelightHelpers.getTY(""));
         SmartDashboard.putNumber("Target Ta", LimelightHelpers.getTA(""));
 
-        SmartDashboard.putNumber("Operator POV", RobotContainer.Operator.getHID().getPOV());
-
-        //SmartDashboard.putNumber("Distance from target", Vision.GetMetersFromTarget());
-
         // -- Output the robot orientation to the dashboard
-        //SmartDashboard.putNumber("Robot Yaw", IMU.getRobotYaw().getDegrees());
         SmartDashboard.putNumber("Robot Yaw", m_robotContainer.drivetrain.getPigeon2().getYaw().getValue());
 
     }
@@ -87,14 +77,7 @@ public class Robot extends TimedRobot
     // -- Disabled
     // -------------------------------------------------------------------------------------------------------------------------------------
     @Override
-    public void disabledInit()
-    {
-//        if (!DriverStation.isFMSAttached())
-//        {
-//            m_robotContainer.Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed);
-//            m_robotContainer.Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed);
-//        }
-    }
+    public void disabledInit() { }
 
     @Override
     public void disabledPeriodic() { }

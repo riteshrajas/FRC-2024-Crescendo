@@ -29,7 +29,7 @@ public final class Constants {
     {
         RoboRIO,
         PDH,
-        IntakeMotor,
+        FeederMotor
     }
 
     public enum CanivoreBusIDs {

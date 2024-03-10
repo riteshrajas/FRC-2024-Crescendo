@@ -24,7 +24,8 @@ public class IntakeSubsystem extends SubsystemBase {
         Intake(-18.42), //og pos = -18 24.7
         Shoot_speaker(10.28),
         Amp(-10), // -33.7
-        Trap(0);
+        Trap(0),
+        TestClimb(-2);
 
         private final double Rotations;
 
@@ -73,7 +74,7 @@ public class IntakeSubsystem extends SubsystemBase {
         PivotConfigs = CreateConfigs(true);
         IntakeConfigs = CreateConfigs(false);
 
-        FeederMotor = CreateSparkMotor(1);
+        FeederMotor = CreateSparkMotor(Constants.RioCanBusIDs.FeederMotor.ordinal());
         FeederPID = CreatePID(FeederMotor);
         PivotMotor = CreateMotor(Constants.CanivoreBusIDs.IntakePivot.GetID());
         IntakeMotor = CreateMotor(Constants.CanivoreBusIDs.IntakeMotor.GetID());
