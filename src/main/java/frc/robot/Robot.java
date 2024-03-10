@@ -41,6 +41,8 @@ public class Robot extends TimedRobot
         //CameraServer.startAutomaticCapture();
 
         m_robotContainer.drivetrain.getDaqThread().setThreadPriority(99);
+
+        System.out.println("Robot Initialized!");
     }
 
     /**

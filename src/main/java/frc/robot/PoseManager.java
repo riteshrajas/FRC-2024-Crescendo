@@ -56,24 +56,27 @@ public class PoseManager
         if (pose == EPose.Stowed)
         {
             return Commands.parallel(
-                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed),
-                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)
+                Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed),
+                Commands.waitSeconds(0.1)
+                    .andThen(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed))
+
             );
         }
 
         if (pose == EPose.Intake)
         {
             return Commands.parallel(
-                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed),
-                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
+                Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed),
+                Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake)
             );
         }
 
         if (pose == EPose.Amp)
         {
             return Commands.parallel(
-                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Amp),
-                    Commands.waitUntil(() -> Arm.GetArmPosition() < -0.025).andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Amp))
+                Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Amp),
+                Commands.waitSeconds(0.1)
+                    .andThen(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Amp))
             );
 
 
@@ -90,9 +93,9 @@ public class PoseManager
 
         if (pose == EPose.PreClimb)
         {
-            return Commands.parallel(
-                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_FirstPos),
-                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)
+            return Commands.sequence(
+                Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_FirstPos),
+                Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Climb)
             );
         }
 

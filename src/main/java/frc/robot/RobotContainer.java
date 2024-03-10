@@ -7,9 +7,9 @@ package frc.robot;
 
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -269,18 +269,17 @@ public class RobotContainer
         Operator.x().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Amp));
         Operator.y().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Speaker));
 
-        Operator.povUp().onTrue(Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_FirstPos));
+        Operator.povUp().onTrue(Pose.Command_GoToPose(PoseManager.EPose.PreClimb));
         Operator.povDown().onTrue(Arm.Command_Climb());
 
-        Operator.povRight().whileTrue(Arm.Command_HoldCoastMode());
-
+        Operator.povLeft().onTrue(Arm.Command_SetCoastMode(NeutralModeValue.Brake).alongWith(Intake.Command_SetCoastMode(NeutralModeValue.Brake)));
+        Operator.povRight().onTrue(Arm.Command_SetCoastMode(NeutralModeValue.Coast).alongWith(Intake.Command_SetCoastMode(NeutralModeValue.Coast)));
 
         // Operator.rightBumper().onTrue(Pose.Command_AutoPose());
         Operator.rightBumper().whileTrue(Intake.Command_MoveNote(true));
         Operator.leftBumper().whileTrue(Intake.Command_MoveNote(false));
 
         Operator.rightTrigger().whileTrue(Command_AutoPose()); // Should now return pose for current tag
-
 
     }
 

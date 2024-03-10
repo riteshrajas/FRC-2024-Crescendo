@@ -4,6 +4,7 @@ import com.ctre.phoenix6.controls.*;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.*;
 import edu.wpi.first.math.MathUtil;
@@ -18,14 +19,17 @@ import frc.robot.RobotContainer;
 
 
 
-public class IntakeSubsystem extends SubsystemBase {
-    public enum EPivotPosition {
-        Stowed(0),
-        Intake(-18.42), //og pos = -18 24.7
-        Shoot_speaker(10.28),
-        Amp(-10), // -33.7
-        Trap(0),
-        TestClimb(-2);
+public class IntakeSubsystem extends SubsystemBase
+{
+
+    public enum EPivotPosition
+    {
+        Stowed(PivotLimitReverse + PivotLimitReverseBuffer),
+        Intake(-0.05),
+        Shoot_speaker(PivotLimitReverse + PivotLimitReverseBuffer),
+        Amp(0.075),
+        Trap(PivotLimitReverse + PivotLimitReverseBuffer),
+        Climb(-0.25);
 
         private final double Rotations;
 
@@ -34,7 +38,8 @@ public class IntakeSubsystem extends SubsystemBase {
         }
     }
 
-    public enum EOutakeType {
+    public enum EOutakeType
+    {
         amp(-20),
         speaker(-74), // known value = -60,  to testing value: 74
 
@@ -47,156 +52,166 @@ public class IntakeSubsystem extends SubsystemBase {
         }
     }
 
-    private TalonFXConfiguration TuneConfigs = null;
     private final double PivotTolerance = 15.0 / 360.0;
+    static private final double PivotLimitForward = 0.325;
+    static private final double PivotLimitReverse = -0.31;
+
+    // Since we zero on the hard stop, add this buffer to when going home so we don't slam into the stop.
+    static private final double PivotLimitReverseBuffer = 0.02;
     private final double TEMP_IntakeVoltage = 5;
 
 
+    // -- Motors
     private TalonFX PivotMotor;
     private TalonFX IntakeMotor;
     private CANSparkFlex FeederMotor;
-    private SparkPIDController FeederPID;
-    private TalonFXConfiguration PivotConfigs;
-    private TalonFXConfiguration IntakeConfigs;
+    private SparkPIDController FeederMotorPID;
 
-    private final MotionMagicVoltage MotionMagicRequest = new MotionMagicVoltage(0);
+
+    // -- Pheonix Requests
+    private final MotionMagicExpoTorqueCurrentFOC PivotRequest = new MotionMagicExpoTorqueCurrentFOC(0);
 
     private final VelocityTorqueCurrentFOC IntakeRequest = new VelocityTorqueCurrentFOC(0);
 
     private final VoltageOut VoltageRequest = new VoltageOut(0).withEnableFOC(true);
 
-    private final DutyCycleOut DutyCycleRequest = new DutyCycleOut(0);
 
     double lastCurrent = 0;
     int currentSpikeCount = 0;
 
-    public IntakeSubsystem() {
-        PivotConfigs = CreateConfigs(true);
-        IntakeConfigs = CreateConfigs(false);
-
-        FeederMotor = CreateSparkMotor(Constants.RioCanBusIDs.FeederMotor.ordinal());
-        FeederPID = CreatePID(FeederMotor);
-        PivotMotor = CreateMotor(Constants.CanivoreBusIDs.IntakePivot.GetID());
-        IntakeMotor = CreateMotor(Constants.CanivoreBusIDs.IntakeMotor.GetID());
-        FeederMotor.burnFlash();
-        ApplyConfigs();
-        PublishConfigs();
-
-        PivotMotor.setControl(MotionMagicRequest.withPosition(EPivotPosition.Stowed.Rotations));
-
-
+    public IntakeSubsystem()
+    {
+        CreatePivotMotor();
+        CreateIntakeMotor();
+        CreateFeederMotor();
     }
+
+    // --------------------------------------------------------------------------------------------
+    // -- Pivot Motor
+    // --------------------------------------------------------------------------------------------
+    private void CreatePivotMotor()
+    {
+        PivotMotor = new TalonFX(Constants.CanivoreBusIDs.IntakePivot.GetID(), Constants.CanivoreBusIDs.BusName);
+
+        var configs = new TalonFXConfiguration();
+
+        configs.withMotorOutput(
+            new MotorOutputConfigs()
+                .withInverted(InvertedValue.Clockwise_Positive)
+                .withNeutralMode(NeutralModeValue.Brake));
+
+        configs.withSlot0(
+            new Slot0Configs()
+                .withGravityType(GravityTypeValue.Arm_Cosine)
+                .withKP(1500)
+                .withKI(0)
+                .withKD(200)
+                .withKS(10)
+                .withKA(0)
+                .withKV(0)
+                .withKG(22));
+
+        configs.withMotionMagic(
+            new MotionMagicConfigs()
+                .withMotionMagicAcceleration(0)
+                .withMotionMagicCruiseVelocity(4)
+                .withMotionMagicExpo_kA(5)
+                .withMotionMagicExpo_kV(5)
+                .withMotionMagicJerk(1000));
+
+        configs.withFeedback(
+            new FeedbackConfigs()
+                .withSensorToMechanismRatio(60));
+
+
+        configs.withSoftwareLimitSwitch(
+            new SoftwareLimitSwitchConfigs()
+                .withForwardSoftLimitEnable(true)
+                .withForwardSoftLimitThreshold(PivotLimitForward)
+                .withReverseSoftLimitEnable(true)
+                .withReverseSoftLimitThreshold(PivotLimitReverse));
+
+        PivotMotor.getConfigurator().apply(configs);
+        PivotMotor.setPosition(PivotLimitReverse);
+    }
+
+    // --------------------------------------------------------------------------------------------
+    // -- Intake Motor
+    // --------------------------------------------------------------------------------------------
+    private void CreateIntakeMotor()
+    {
+        IntakeMotor = new TalonFX(Constants.CanivoreBusIDs.IntakeMotor.GetID(), Constants.CanivoreBusIDs.BusName);
+
+        var configs = new TalonFXConfiguration();
+
+        configs.withMotorOutput(
+            new MotorOutputConfigs()
+                .withNeutralMode(NeutralModeValue.Brake));
+
+        configs.withSlot0(
+            new Slot0Configs()
+                .withGravityType(GravityTypeValue.Elevator_Static)
+                .withKP(10)
+                .withKI(0)
+                .withKD(0)
+                .withKS(40)
+                .withKA(0)
+                .withKV(0.25)
+                .withKG(0));
+
+        IntakeMotor.getConfigurator().apply(configs);
+    }
+
+    // --------------------------------------------------------------------------------------------
+    // -- Feeder Motor
+    // --------------------------------------------------------------------------------------------
+    private void CreateFeederMotor()
+    {
+        FeederMotor = new CANSparkFlex(Constants.RioCanBusIDs.FeederMotor.ordinal(), CANSparkLowLevel.MotorType.kBrushless);
+
+        FeederMotor.restoreFactoryDefaults();
+        FeederMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
+        FeederMotor.setInverted(true);
+
+        FeederMotorPID = FeederMotor.getPIDController();
+
+        FeederMotorPID.setP(0.000325);
+        FeederMotorPID.setI(0.0000001);
+        FeederMotorPID.setD(0.01357);
+        FeederMotorPID.setIZone(0);
+        FeederMotorPID.setFF(0.000015);
+        FeederMotorPID.setOutputRange(-1, 1);
+    }
+
 
     public double GetPivotPos() {
         return PivotMotor.getPosition().getValue();
     }
 
-    private TalonFXConfiguration CreateConfigs(boolean isPivot) {
-        var configs = new TalonFXConfiguration();
-        var slotConfigs = configs.Slot0;
-        var motionMagicConfigs = configs.MotionMagic;
-
-        if (isPivot) {
-            slotConfigs.kP = 10;
-            slotConfigs.kI = 0;
-            slotConfigs.kD = 0.2;
-
-            slotConfigs.kS = 0.35; // Static
-            slotConfigs.kA = 0.01; // Acceleration
-            slotConfigs.kV = 0.12; // Velocity
-            slotConfigs.kG = 0; // Gravity
-
-            slotConfigs.withGravityType(GravityTypeValue.Arm_Cosine);
-
-            motionMagicConfigs.MotionMagicAcceleration = 300; // rps/s acceleration (0.5 seconds)
-            motionMagicConfigs.MotionMagicCruiseVelocity = 160; // rps cruise velocity
-            motionMagicConfigs.MotionMagicJerk = 1600; // rps/s^2 jerk (0.1 seconds)
-            motionMagicConfigs.MotionMagicExpo_kA = 0.1;
-            motionMagicConfigs.MotionMagicExpo_kV = 0.1;
-
-            MotionMagicRequest.Slot = 0;
-        } else {
-            configs.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-            slotConfigs.kP = 10;
-            slotConfigs.kI = 0;
-            slotConfigs.kD = 0;
-
-            slotConfigs.kS = 40; // Static
-            slotConfigs.kA = 0; // Acceleration
-            slotConfigs.kV = 0.25; // Velocity
-            slotConfigs.kG = 0; // Gravity
-
-            motionMagicConfigs.MotionMagicAcceleration = 0; // rps/s acceleration (0.5 seconds)
-            motionMagicConfigs.MotionMagicCruiseVelocity = 0; // rps cruise velocity
-            motionMagicConfigs.MotionMagicJerk = 0; // rps/s^2 jerk (0.1 seconds)
-            motionMagicConfigs.MotionMagicExpo_kA = 0;
-            motionMagicConfigs.MotionMagicExpo_kV = 0;
-
-            MotionMagicRequest.Slot = 0;
-        }
-        return configs;
-    }
-
-
-    private TalonFX CreateMotor(int deviceID) {
-        var motor = new TalonFX(deviceID, Constants.CanivoreBusIDs.BusName);
-        motor.setPosition(0);
-        return motor;
-    }
-
-    private CANSparkFlex CreateSparkMotor(int motorId) {
-        CANSparkFlex motor = new CANSparkFlex(motorId, CANSparkLowLevel.MotorType.kBrushless);
-
-        motor.restoreFactoryDefaults();
-        motor.setIdleMode(CANSparkBase.IdleMode.kBrake);
-        motor.setInverted(true);
-
-        return motor;
-    }
-
-    private SparkPIDController CreatePID(CANSparkFlex motor) {
-        var pid = motor.getPIDController();
-
-        pid.setP(0.000325);
-        pid.setI(0.0000001);
-        pid.setD(0.01357);
-        pid.setIZone(0);
-        pid.setFF(0.000015);
-        pid.setOutputRange(-1, 1);
-
-        return pid;
-    }
-
-
-    private void ApplyConfigs() {
-        var timeout = 0.05;
-
-        PivotMotor.getConfigurator().apply(PivotConfigs, timeout);
-        IntakeMotor.getConfigurator().apply(IntakeConfigs, timeout);
-
-        System.out.println("Configs Applied!");
-    }
 
     public boolean isOuttakeUpToSpeed()
     {
         return MathUtil.isNear(EOutakeType.speaker.RPS, IntakeMotor.getVelocity().getValue(), 1);
     }
 
-    public Command Command_SetPivotPosition(EPivotPosition position) { //Controls the pivot of the intake
+    public Command Command_SetPivotPosition(EPivotPosition position)
+    {
         return run(() ->
         {
             SmartDashboard.putNumber("Intake.PivotTarget", position.Rotations);
-
-            PivotMotor.setControl(MotionMagicRequest.withPosition(position.Rotations));
+            PivotMotor.setControl(PivotRequest.withPosition(position.Rotations));
         })
-                .until(() ->
-                {
-                    double actualRotation = PivotMotor.getPosition().getValue();
-                    return MathUtil.isNear(position.Rotations, actualRotation, PivotTolerance);
-                })
-                .andThen(() -> System.out.println("Pivot has reached it's target!"));
+        .until(() ->
+        {
+            double actualRotation = PivotMotor.getPosition().getValue();
+            return MathUtil.isNear(position.Rotations, actualRotation, PivotTolerance);
+        });
     }
 
+    public Command Command_SetCoastMode(NeutralModeValue mode)
+    {
+        return runOnce(() -> PivotMotor.setNeutralMode(mode)).ignoringDisable(true);
+    }
 
     public Command Command_PreIntakeSpinUp() {
         // TODO: This should be a startEnd command that stops the motor when it finishes in case the command gets interrupted,
@@ -209,88 +224,86 @@ public class IntakeSubsystem extends SubsystemBase {
         });
     }
 
-    public Command Command_IntakeNote() {
+    public Command Command_IntakeNote()
+    {
+        return startEnd(
+            () -> {
+                currentSpikeCount = 0;
+                lastCurrent = IntakeMotor.getStatorCurrent().getValue();
 
+                //SmartDashboard.putNumber("Intake.TargetVelocity", 2000);
+                IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage));
+                //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
+            },
+            () -> IntakeMotor.stopMotor()
+        )
+        .until(() ->
+        {
+            double curCurrent = IntakeMotor.getStatorCurrent().getValue();
+            SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
 
-        return
-                startEnd
-                        (
-                                () ->
-                                {
-                                    currentSpikeCount = 0;
-                                    lastCurrent = IntakeMotor.getStatorCurrent().getValue();
+            if (curCurrent - lastCurrent > 25)
+            {
+                currentSpikeCount++;
+            }
 
-                                    //SmartDashboard.putNumber("Intake.TargetVelocity", 2000);
-                                    IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage));
-                                    //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
-                                },
-                                () -> IntakeMotor.stopMotor()
-                        )
-                        .until(() ->
-                        {
+            lastCurrent = curCurrent;
 
+            if (currentSpikeCount >= 1)
+            {
+                CommandScheduler.getInstance().schedule(
+                    Commands.startEnd(
+                        () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1),
+                        () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0)
+                    ).withTimeout(0.5));
+                return true;
+            }
 
-                            double curCurrent = IntakeMotor.getStatorCurrent().getValue();
-                            SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
-                            if (curCurrent - lastCurrent > 25) {
-                                CommandScheduler.getInstance().schedule(
-                                        Commands.startEnd(
-                                                () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1),
-                                                () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0)
-                                        ).withTimeout(0.5));
-
-
-                                currentSpikeCount++;
-                            }
-
-                            lastCurrent = curCurrent;
-                            return currentSpikeCount >= 1;
-                        });
+            return false;
+        });
     }
 
-    public Command Command_MoveNote(boolean forward) {
-        return startEnd
-                (() ->
-                        {
-                            IntakeMotor.setControl(IntakeRequest.withVelocity(forward ? -3 : 3));
-                            FeederPID.setReference(forward ? -3 : 3, CANSparkBase.ControlType.kVelocity);
-                        },
-                        () ->
-                        {
-                            IntakeMotor.stopMotor();
-                            FeederMotor.stopMotor();
-                        }
-                );
+    public Command Command_MoveNote(boolean forward)
+    {
+        var velocity = forward ? -3 : 3;
+
+        return startEnd(
+            () -> {
+                IntakeMotor.setControl(IntakeRequest.withVelocity(velocity));
+                FeederMotorPID.setReference(velocity, CANSparkBase.ControlType.kVelocity);
+            },
+            () -> {
+                IntakeMotor.stopMotor();
+                FeederMotor.stopMotor();
+            }
+        );
     }
 
     public Command Command_Feed()
     {
-        return startEnd
-                (() ->
-                        {
-                            if (isOuttakeUpToSpeed())
-                            {
-                                FeederPID.setReference(3, CANSparkBase.ControlType.kVelocity);
-                            }
-                        },
-                        () ->
-                        {
-                            FeederMotor.stopMotor();
-                        }
-                );
+        return runEnd(
+            () -> {
+                if (isOuttakeUpToSpeed())
+                {
+                    FeederMotorPID.setReference(3, CANSparkBase.ControlType.kVelocity);
+                }
+            },
+            () -> FeederMotor.stopMotor()
+        );
     }
 
 
     public Command Command_Outtake(EOutakeType outtakeType)
     {
         return startEnd(
-                () ->
-                {
-                    SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPS);
-                    //IntakeMotor.setControl(DutyCycleRequest.withOutput(-0.75));
-                    IntakeMotor.setControl(IntakeRequest.withVelocity(outtakeType.RPS));
-                },
-                () -> IntakeMotor.stopMotor()
+            () -> {
+                SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPS);
+                IntakeMotor.setControl(IntakeRequest.withVelocity(outtakeType.RPS));
+            },
+            () -> {
+                SmartDashboard.putNumber("Intake.TargetVelocity", 0);
+                IntakeMotor.stopMotor();
+            }
         );
     }
 
@@ -303,87 +316,17 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public Command Command_ZeroPivotEncoder()
     {
-        return runOnce(() -> PivotMotor.setPosition(0))
-                .ignoringDisable(true);
+        return runOnce(() -> PivotMotor.setPosition(PivotLimitReverse))
+            .ignoringDisable(true);
     }
 
     public void periodic()
     {
         SmartDashboard.putNumber("Intake.CurrentSpikeCount", currentSpikeCount);
         SmartDashboard.putNumber("Intake.PivotPosition", PivotMotor.getPosition().getValue());
-        //SmartDashboard.putNumber("Intake.ActualVelocity", PivotMotor.getVelocity().getValue());
         SmartDashboard.putNumber("Intake.ActualCurrent", IntakeMotor.getStatorCurrent().getValue());
 
-        UpdateConfigs();
     }
 
-    private void PublishConfigs()
-    {
-        if (TuneConfigs == null) { return; }
-
-        SmartDashboard.putNumber("Pivot.Target", 0);
-        SmartDashboard.putNumber("Pivot.Position", 0);
-        SmartDashboard.putNumber("Pivot.Error", 0);
-
-        SmartDashboard.putNumber("Pivot.Configs.P", TuneConfigs.Slot0.kP);
-        SmartDashboard.putNumber("Pivot.Configs.I", TuneConfigs.Slot0.kI);
-        SmartDashboard.putNumber("Pivot.Configs.D", TuneConfigs.Slot0.kD);
-
-        SmartDashboard.putNumber("Pivot.Configs.S", TuneConfigs.Slot0.kS);
-        SmartDashboard.putNumber("Pivot.Configs.A", TuneConfigs.Slot0.kA);
-        SmartDashboard.putNumber("Pivot.Configs.V", TuneConfigs.Slot0.kV);
-        SmartDashboard.putNumber("Pivot.Configs.G", TuneConfigs.Slot0.kG);
-
-        SmartDashboard.putNumber("Pivot.Configs.MMCruise", TuneConfigs.MotionMagic.MotionMagicCruiseVelocity);
-        SmartDashboard.putNumber("Pivot.Configs.MMAccel", TuneConfigs.MotionMagic.MotionMagicAcceleration);
-        SmartDashboard.putNumber("Pivot.Configs.MMJerk", TuneConfigs.MotionMagic.MotionMagicJerk);
-        SmartDashboard.putNumber("Pivot.Configs.MMExpoA", TuneConfigs.MotionMagic.MotionMagicExpo_kA);
-        SmartDashboard.putNumber("Pivot.Configs.MMExpoV", TuneConfigs.MotionMagic.MotionMagicExpo_kV);
-    }
-
-    private void UpdateConfigs()
-    {
-        if (TuneConfigs == null) { return; }
-
-        var dirty = false;
-//
-        var p = SmartDashboard.getNumber("Pivot.Configs.P", TuneConfigs.Slot0.kP);
-        var i = SmartDashboard.getNumber("Pivot.Configs.I", TuneConfigs.Slot0.kI);
-        var d = SmartDashboard.getNumber("Pivot.Configs.D", TuneConfigs.Slot0.kD);
-
-        var s = SmartDashboard.getNumber("Pivot.Configs.S", TuneConfigs.Slot0.kS);
-        var a = SmartDashboard.getNumber("Pivot.Configs.A", TuneConfigs.Slot0.kA);
-        var v = SmartDashboard.getNumber("Pivot.Configs.V", TuneConfigs.Slot0.kV);
-        var g = SmartDashboard.getNumber("Pivot.Configs.G", TuneConfigs.Slot0.kG);
-
-        var mmA = SmartDashboard.getNumber("Pivot.Configs.MMAccel", TuneConfigs.MotionMagic.MotionMagicAcceleration);
-        var mmC = SmartDashboard.getNumber("Pivot.Configs.MMCruise", TuneConfigs.MotionMagic.MotionMagicCruiseVelocity);
-        var mmJ = SmartDashboard.getNumber("Pivot.Configs.MMJerk", TuneConfigs.MotionMagic.MotionMagicJerk);
-        var mmEA = SmartDashboard.getNumber("Pivot.Configs.mmExpoA", TuneConfigs.MotionMagic.MotionMagicExpo_kA);
-        var mmEV = SmartDashboard.getNumber("Pivot.Configs.mmExpoV", TuneConfigs.MotionMagic.MotionMagicExpo_kV);
-
-
-
-        if (p != TuneConfigs.Slot0.kP) { TuneConfigs.Slot0.kP = p; dirty = true; }
-        if (i != TuneConfigs.Slot0.kI) { TuneConfigs.Slot0.kI = i; dirty = true; }
-        if (d != TuneConfigs.Slot0.kD) { TuneConfigs.Slot0.kD = d; dirty = true; }
-
-        if (s != TuneConfigs.Slot0.kS) { TuneConfigs.Slot0.kS = s; dirty = true; }
-        if (a != TuneConfigs.Slot0.kA) { TuneConfigs.Slot0.kA = a; dirty = true; }
-        if (v != TuneConfigs.Slot0.kV) { TuneConfigs.Slot0.kV = v; dirty = true; }
-        if (g != TuneConfigs.Slot0.kG) { TuneConfigs.Slot0.kG = g; dirty = true; }
-
-        if (mmC != TuneConfigs.MotionMagic.MotionMagicCruiseVelocity) { TuneConfigs.MotionMagic.MotionMagicCruiseVelocity = mmC; dirty = true; }
-        if (mmA != TuneConfigs.MotionMagic.MotionMagicAcceleration) { TuneConfigs.MotionMagic.MotionMagicAcceleration = mmA; dirty = true; }
-        if (mmJ != TuneConfigs.MotionMagic.MotionMagicJerk) { TuneConfigs.MotionMagic.MotionMagicJerk = mmJ; dirty = true; }
-        if (mmEA != TuneConfigs.MotionMagic.MotionMagicExpo_kA) { TuneConfigs.MotionMagic.MotionMagicExpo_kA = mmEA; dirty = true; }
-        if (mmEV != TuneConfigs.MotionMagic.MotionMagicExpo_kV) { TuneConfigs.MotionMagic.MotionMagicExpo_kV = mmEV; dirty = true; }
-
-
-        if (dirty)
-        {
-            ApplyConfigs();
-        }
-    }
 }
 

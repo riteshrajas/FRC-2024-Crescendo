@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.configs.*;
 import com.ctre.phoenix6.controls.*;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.MathUtil;
@@ -15,10 +16,7 @@ import frc.robot.RobotContainer;
 public class ArmSubsystem extends SubsystemBase
 {
     private static final double ArmTolerance = 15.0 / 360.0;
-    private static final double MotorTimeout = 0.05;
-
     private static final double LowerLimit = -0.12;
-
     private static final double UpperLimit = 0.28;
 
     private double ManualArmControlTarget = 0;
@@ -28,8 +26,8 @@ public class ArmSubsystem extends SubsystemBase
         Shoot_speaker(LowerLimit),
         Shoot_podium(LowerLimit), //TODO: tune when added
         Shoot_wing(LowerLimit), //TODO: tune when added
-        Climb_FirstPos(LowerLimit),
-        Amp(LowerLimit),
+        Climb_FirstPos(UpperLimit),
+        Amp(0.169),
         Trap(LowerLimit);
 
         private final double Rotations;
@@ -43,11 +41,11 @@ public class ArmSubsystem extends SubsystemBase
     private TalonFX LeftMotor;
     private TalonFX RightMotor;
     private final MotionMagicExpoTorqueCurrentFOC PoseRequest =
-            new MotionMagicExpoTorqueCurrentFOC(LowerLimit)
-                    .withSlot(0);
+        new MotionMagicExpoTorqueCurrentFOC(LowerLimit)
+            .withSlot(0);
     private final PositionTorqueCurrentFOC ClimbRequest =
-            new PositionTorqueCurrentFOC(LowerLimit)
-                    .withSlot(1);
+        new PositionTorqueCurrentFOC(LowerLimit)
+            .withSlot(1);
 
 
     public ArmSubsystem()
@@ -73,50 +71,52 @@ public class ArmSubsystem extends SubsystemBase
         var configs = new TalonFXConfiguration();
 
         configs.withSlot0(
-                new Slot0Configs()
-                        .withKP(300)
-                        .withKI(0)
-                        .withKD(65)
-                        .withKS(0)
-                        .withKA(0)
-                        .withKV(0)
-                        .withKG(8));
+            new Slot0Configs()
+                .withGravityType(GravityTypeValue.Arm_Cosine)
+                .withKP(300)
+                .withKI(0)
+                .withKD(65)
+                .withKS(0)
+                .withKA(0)
+                .withKV(0)
+                .withKG(8));
 
         configs.withSlot1(
-                new Slot1Configs()
-                        .withKP(2000)
-                        .withKI(0) //TODO: add some KI to make sure we fully climb (probably about 150ish)
-                        .withKD(65)
-                        .withKS(8)
-                        .withKA(0)
-                        .withKV(0)
-                        .withKG(27));
+            new Slot1Configs()
+                .withGravityType(GravityTypeValue.Arm_Cosine)
+                .withKP(2000)
+                .withKI(0) //TODO: add some KI to make sure we fully climb (probably about 150ish)
+                .withKD(65)
+                .withKS(8)
+                .withKA(0)
+                .withKV(0)
+                .withKG(27));
 
         configs.withMotionMagic(
-                new MotionMagicConfigs()
-                        .withMotionMagicAcceleration(0)
-                        .withMotionMagicCruiseVelocity(5)
-                        .withMotionMagicExpo_kA(3)
-                        .withMotionMagicExpo_kV(5)
-                        .withMotionMagicJerk(1000));
+            new MotionMagicConfigs()
+                .withMotionMagicAcceleration(0)
+                .withMotionMagicCruiseVelocity(5)
+                .withMotionMagicExpo_kA(3)
+                .withMotionMagicExpo_kV(5)
+                .withMotionMagicJerk(1000));
 
         configs.withFeedback(
-                new FeedbackConfigs()
-                        .withSensorToMechanismRatio(117.6));
+            new FeedbackConfigs()
+                .withSensorToMechanismRatio(117.6));
 
         configs.withMotorOutput(
-                new MotorOutputConfigs()
-                        .withInverted(InvertedValue.Clockwise_Positive)
-                        .withNeutralMode(NeutralModeValue.Brake));
+            new MotorOutputConfigs()
+                .withInverted(InvertedValue.Clockwise_Positive)
+                .withNeutralMode(NeutralModeValue.Brake));
 
         configs.withSoftwareLimitSwitch(
-                new SoftwareLimitSwitchConfigs()
-                        .withForwardSoftLimitEnable(true)
-                        .withForwardSoftLimitThreshold(UpperLimit)
-                        .withReverseSoftLimitEnable(true)
-                        .withReverseSoftLimitThreshold(LowerLimit));
+            new SoftwareLimitSwitchConfigs()
+                .withForwardSoftLimitEnable(true)
+                .withForwardSoftLimitThreshold(UpperLimit)
+                .withReverseSoftLimitEnable(true)
+                .withReverseSoftLimitThreshold(LowerLimit));
 
-        motor.getConfigurator().apply(configs, MotorTimeout);
+        motor.getConfigurator().apply(configs);
 
         motor.setPosition(LowerLimit);
         return motor;
@@ -160,12 +160,12 @@ public class ArmSubsystem extends SubsystemBase
                 }));
     }
 
-    public Command Command_HoldCoastMode()
+    public Command Command_SetCoastMode(NeutralModeValue mode)
     {
-        return startEnd(
-                () -> { LeftMotor.setNeutralMode(NeutralModeValue.Coast); RightMotor.setNeutralMode(NeutralModeValue.Coast); },
-                () -> { LeftMotor.setNeutralMode(NeutralModeValue.Brake); RightMotor.setNeutralMode(NeutralModeValue.Brake); })
-                .ignoringDisable(true);
+        return runOnce(() -> {
+            LeftMotor.setNeutralMode(mode);
+            RightMotor.setNeutralMode(mode);
+        }).ignoringDisable(true);
     }
 
     @Override
