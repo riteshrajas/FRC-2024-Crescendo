@@ -180,11 +180,10 @@ public class RobotContainer
    Command Command_IntakeNoteSequence()
     {
         return Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed)
-          .andThen(Intake.Command_PreIntakeSpinUp())
-          .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake))
-          .andThen(Intake.Command_PreIntakeSpinUp().alongWith(Commands.waitSeconds(0.25)))
-          .andThen(Intake.Command_IntakeNote())
-          .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed));
+        .andThen(Intake.Command_PreIntakeSpinUp())
+        .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake))
+        .andThen(Intake.Command_PreIntakeSpinUp().alongWith(Commands.waitSeconds(0.25)))
+        .andThen(Intake.Command_IntakeNote());
     }
 
     public Command Command_AutoPose()
@@ -260,8 +259,8 @@ public class RobotContainer
         Operator.start().onTrue(Arm.Command_ZeroArmEncoder().alongWith(Intake.Command_ZeroPivotEncoder().ignoringDisable(true)));
         Operator.back().whileTrue(Arm.Command_ManualArmControl());
 
-        Operator.rightTrigger().onTrue(Intake.Command_Feed());
-
+        //Operator.rightTrigger().onTrue(Intake.Command_Feed());
+        Operator.rightTrigger().onTrue(Intake.Command_FeederTakeNote());
 
 
         Operator.a().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Stowed));
@@ -279,7 +278,7 @@ public class RobotContainer
         Operator.rightBumper().whileTrue(Intake.Command_MoveNote(true));
         Operator.leftBumper().whileTrue(Intake.Command_MoveNote(false));
 
-        Operator.rightTrigger().whileTrue(Command_AutoPose()); // Should now return pose for current tag
+        //Operator.rightTrigger().whileTrue(Command_AutoPose()); // Should now return pose for current tag
 
     }
 
@@ -353,5 +352,6 @@ public class RobotContainer
         SmartDashboard.putNumber("FinalAngVel", Math.toRadians(finalAngVelocity));
         return finalAngVelocity * magicScalar;
     }
+
 
 }

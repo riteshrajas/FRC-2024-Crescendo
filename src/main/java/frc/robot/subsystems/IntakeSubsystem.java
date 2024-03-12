@@ -40,15 +40,15 @@ public class IntakeSubsystem extends SubsystemBase
 
     public enum EOutakeType
     {
-        amp(-20),
-        speaker(-74), // known value = -60,  to testing value: 74
+        amp(-0.5),
+        speaker(-1), // known value = -60,  to testing value: 74
 
         trap(0);
 
-        private final double RPS;
+        private final double DutyCycle;
 
-        EOutakeType(double rps) {
-            RPS = rps;
+        EOutakeType(double dutyCycle) {
+            DutyCycle = dutyCycle;
         }
     }
 
@@ -58,7 +58,7 @@ public class IntakeSubsystem extends SubsystemBase
 
     // Since we zero on the hard stop, add this buffer to when going home so we don't slam into the stop.
     static private final double PivotLimitReverseBuffer = 0.02;
-    private final double TEMP_IntakeVoltage = 5;
+    private final double TEMP_IntakeDutyCycle = 0.4;
 
 
     // -- Motors
@@ -71,9 +71,9 @@ public class IntakeSubsystem extends SubsystemBase
     // -- Pheonix Requests
     private final MotionMagicExpoTorqueCurrentFOC PivotRequest = new MotionMagicExpoTorqueCurrentFOC(0);
 
-    private final VelocityTorqueCurrentFOC IntakeRequest = new VelocityTorqueCurrentFOC(0);
+//    private final VelocityTorqueCurrentFOC IntakeRequest = new VelocityTorqueCurrentFOC(0);
 
-    private final VoltageOut VoltageRequest = new VoltageOut(0).withEnableFOC(true);
+    private final DutyCycleOut IntakeRequest = new DutyCycleOut(0);
 
 
     double lastCurrent = 0;
@@ -167,7 +167,7 @@ public class IntakeSubsystem extends SubsystemBase
     // --------------------------------------------------------------------------------------------
     private void CreateFeederMotor()
     {
-        FeederMotor = new CANSparkFlex(Constants.RioCanBusIDs.FeederMotor.ordinal(), CANSparkLowLevel.MotorType.kBrushless);
+        FeederMotor = new CANSparkFlex(2, CANSparkLowLevel.MotorType.kBrushless);
 
         FeederMotor.restoreFactoryDefaults();
         FeederMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
@@ -175,23 +175,21 @@ public class IntakeSubsystem extends SubsystemBase
 
         FeederMotorPID = FeederMotor.getPIDController();
 
-        FeederMotorPID.setP(0.000325);
+        FeederMotorPID.setP(0.05);
         FeederMotorPID.setI(0.0000001);
         FeederMotorPID.setD(0.01357);
         FeederMotorPID.setIZone(0);
         FeederMotorPID.setFF(0.000015);
         FeederMotorPID.setOutputRange(-1, 1);
+
+        FeederMotor.burnFlash();
+
+        FeederMotor.stopMotor();
     }
 
 
     public double GetPivotPos() {
         return PivotMotor.getPosition().getValue();
-    }
-
-
-    public boolean isOuttakeUpToSpeed()
-    {
-        return MathUtil.isNear(EOutakeType.speaker.RPS, IntakeMotor.getVelocity().getValue(), 1);
     }
 
     public Command Command_SetPivotPosition(EPivotPosition position)
@@ -219,7 +217,7 @@ public class IntakeSubsystem extends SubsystemBase
         //       spin up the wheels and rely on the invoking command sequence to stop the intake.
         return runOnce(() ->
         {
-            IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage));
+            IntakeMotor.setControl(IntakeRequest.withOutput(TEMP_IntakeDutyCycle));
             //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
         });
     }
@@ -230,12 +228,12 @@ public class IntakeSubsystem extends SubsystemBase
             () -> {
                 currentSpikeCount = 0;
                 lastCurrent = IntakeMotor.getStatorCurrent().getValue();
-
-                //SmartDashboard.putNumber("Intake.TargetVelocity", 2000);
-                IntakeMotor.setControl(VoltageRequest.withOutput(TEMP_IntakeVoltage));
-                //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
+                IntakeMotor.setControl(IntakeRequest.withOutput(TEMP_IntakeDutyCycle));
             },
-            () -> IntakeMotor.stopMotor()
+            () -> {
+                IntakeMotor.stopMotor();
+                PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations));
+            }
         )
         .until(() ->
         {
@@ -258,19 +256,55 @@ public class IntakeSubsystem extends SubsystemBase
                     ).withTimeout(0.5));
                 return true;
             }
-
             return false;
-        });
+        })
+        .andThen(Command_FeederTakeNote());
+    }
+
+    public Command Command_FeederTakeNote()
+    {
+        var feederMotorIntakeSpeed = -0.075;
+
+       return Commands.sequence(
+           run(() -> {
+               FeederMotorPID.setReference(feederMotorIntakeSpeed, CANSparkBase.ControlType.kDutyCycle);
+               IntakeMotor.setControl(IntakeRequest.withOutput(0.15));
+           }).withTimeout(0.1),
+           startEnd(
+               () -> {
+                   currentSpikeCount = 0;
+                   lastCurrent = FeederMotor.getOutputCurrent();
+                   FeederMotorPID.setReference(feederMotorIntakeSpeed, CANSparkBase.ControlType.kDutyCycle);
+               },
+               () -> {
+                   FeederMotor.stopMotor();
+                   IntakeMotor.stopMotor();
+               }
+           )
+           .until(() -> {
+               double curCurrent = FeederMotor.getOutputCurrent();
+               SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
+               if (curCurrent - lastCurrent > 5) {
+                   currentSpikeCount++;
+               }
+               return currentSpikeCount >= 1;
+           }),
+           startEnd(
+               () -> FeederMotorPID.setReference(feederMotorIntakeSpeed, CANSparkBase.ControlType.kDutyCycle),
+               () -> FeederMotor.stopMotor())
+               .withTimeout(0.15)
+        );
     }
 
     public Command Command_MoveNote(boolean forward)
     {
-        var velocity = forward ? -3 : 3;
+        var dutyCycle = forward ? -0.15: 0.15;
 
         return startEnd(
             () -> {
-                IntakeMotor.setControl(IntakeRequest.withVelocity(velocity));
-                FeederMotorPID.setReference(velocity, CANSparkBase.ControlType.kVelocity);
+                //FeederMotorPID.setReference(velocity * 60, CANSparkBase.ControlType.kVelocity);
+                IntakeMotor.setControl(IntakeRequest.withOutput(dutyCycle));
+
             },
             () -> {
                 IntakeMotor.stopMotor();
@@ -279,31 +313,13 @@ public class IntakeSubsystem extends SubsystemBase
         );
     }
 
-    public Command Command_Feed()
-    {
-        return runEnd(
-            () -> {
-                if (isOuttakeUpToSpeed())
-                {
-                    FeederMotorPID.setReference(3, CANSparkBase.ControlType.kVelocity);
-                }
-            },
-            () -> FeederMotor.stopMotor()
-        );
-    }
-
-
     public Command Command_Outtake(EOutakeType outtakeType)
     {
-        return startEnd(
-            () -> {
-                SmartDashboard.putNumber("Intake.TargetVelocity", outtakeType.RPS);
-                IntakeMotor.setControl(IntakeRequest.withVelocity(outtakeType.RPS));
-            },
-            () -> {
-                SmartDashboard.putNumber("Intake.TargetVelocity", 0);
-                IntakeMotor.stopMotor();
-            }
+        return Commands.sequence(
+           run(() -> IntakeMotor.setControl(IntakeRequest.withOutput(outtakeType.DutyCycle)))
+               .withTimeout(0.25),
+           run(() -> FeederMotor.set(0.5))
+               .withTimeout(0.25)
         );
     }
 
@@ -324,7 +340,8 @@ public class IntakeSubsystem extends SubsystemBase
     {
         SmartDashboard.putNumber("Intake.CurrentSpikeCount", currentSpikeCount);
         SmartDashboard.putNumber("Intake.PivotPosition", PivotMotor.getPosition().getValue());
-        SmartDashboard.putNumber("Intake.ActualCurrent", IntakeMotor.getStatorCurrent().getValue());
+        SmartDashboard.putNumber("Intake.IntakeCurrent", IntakeMotor.getStatorCurrent().getValue());
+        SmartDashboard.putNumber("Intake.FeederCurrent", FeederMotor.getOutputCurrent());
 
     }
 
