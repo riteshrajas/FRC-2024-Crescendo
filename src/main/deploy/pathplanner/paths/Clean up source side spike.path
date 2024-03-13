@@ -3,41 +3,41 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.46,
+        "x": 2.27,
         "y": 5.56
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.46,
-        "y": 5.06
+        "x": 0.9626945359454185,
+        "y": 4.543804579763226
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.262597392527166,
-        "y": 4.028527771748839
+        "x": 2.5553683061717036,
+        "y": 4.051949444840401
       },
       "prevControl": {
-        "x": 2.3211515752560734,
-        "y": 3.993395262111494
+        "x": 2.7661633639957715,
+        "y": 3.9348410793825863
       },
       "nextControl": {
-        "x": 2.208519785675189,
-        "y": 4.060974335860025
+        "x": 2.5002397656468767,
+        "y": 4.082576411798638
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.46,
-        "y": 5.56
+        "x": 2.27,
+        "y": 5.556
       },
       "prevControl": {
-        "x": 1.9869876445601673,
-        "y": 5.4077591249048425
+        "x": 1.5599471997802752,
+        "y": 5.351852301422149
       },
       "nextControl": null,
       "isLocked": false,
@@ -51,21 +51,33 @@
       "rotateFast": false
     }
   ],
-  "constraintZones": [],
+  "constraintZones": [
+    {
+      "name": "New Constraints Zone",
+      "minWaypointRelativePos": 0.55,
+      "maxWaypointRelativePos": 1.25,
+      "constraints": {
+        "maxVelocity": 0.5,
+        "maxAcceleration": 1.5,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0
+      }
+    }
+  ],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 5.18,
-    "maxAcceleration": 2.5,
+    "maxVelocity": 2.5,
+    "maxAcceleration": 1.5,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0
   },
   "goalEndState": {
     "velocity": 0.0,
-    "rotation": 175.0,
+    "rotation": 180.0,
     "rotateFast": false
   },
   "reversed": false,
   "folder": null,
   "previewStartingState": null,
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

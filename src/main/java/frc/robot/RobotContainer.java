@@ -195,9 +195,9 @@ public class RobotContainer
     {
         NamedCommands.registerCommand("Arm Score", Pose.Command_GoToPose(PoseManager.EPose.Speaker));
         NamedCommands.registerCommand("Arm Stow", Pose.Command_GoToPose(PoseManager.EPose.Stowed));
-        NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence().withTimeout(3));
+        NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence());
         NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
-        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker).withTimeout(0.5));
+        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker).withTimeout(0.5).andThen(Intake.Command_StopIntake()));
     }
     
     public Command GetAutonomousCommand()

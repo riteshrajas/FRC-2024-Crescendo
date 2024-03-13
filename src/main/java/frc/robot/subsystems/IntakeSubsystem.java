@@ -25,7 +25,7 @@ public class IntakeSubsystem extends SubsystemBase
     public enum EPivotPosition
     {
         Stowed(PivotLimitReverse + PivotLimitReverseBuffer),
-        Intake(-0.05),
+        Intake(-0.04),
         Shoot_speaker(PivotLimitReverse),
         Amp(0.075),
         Trap(PivotLimitReverse + PivotLimitReverseBuffer),
@@ -301,12 +301,13 @@ public class IntakeSubsystem extends SubsystemBase
 
     public Command Command_MoveNote(boolean forward)
     {
-        var dutyCycle = forward ? -0.15: 0.15;
+        var dutyCycle = forward ? -0.5: 0.5;
 
         return startEnd(
             () -> {
                 //FeederMotorPID.setReference(velocity * 60, CANSparkBase.ControlType.kVelocity);
                 IntakeMotor.setControl(IntakeRequest.withOutput(dutyCycle));
+                FeederMotor.set(forward ? 0.15: -0.15);
 
             },
             () -> {
