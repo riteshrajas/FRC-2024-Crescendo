@@ -33,6 +33,7 @@ public class Robot extends TimedRobot
     {
         m_robotContainer = new RobotContainer();
 
+
         for (int port = 5800; port <= 5807; port++)
         {
             PortForwarder.add(port, "10.33.9.11", port);
@@ -43,6 +44,7 @@ public class Robot extends TimedRobot
         m_robotContainer.drivetrain.getDaqThread().setThreadPriority(99);
 
         System.out.println("Robot Initialized!");
+
     }
 
     /**

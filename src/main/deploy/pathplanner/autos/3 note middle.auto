@@ -50,7 +50,19 @@
         {
           "type": "named",
           "data": {
+            "name": "Arm Score"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
             "name": "Shoot Speaker"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Arm Stow"
           }
         }
       ]

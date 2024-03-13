@@ -16,16 +16,16 @@
     },
     {
       "anchor": {
-        "x": 2.4499707772596704,
-        "y": 5.56
+        "x": 3.1174884603692163,
+        "y": 5.555088802485298
       },
       "prevControl": {
-        "x": 2.813006710178897,
-        "y": 5.544136883669355
+        "x": 3.480524393288443,
+        "y": 5.539225686154654
       },
       "nextControl": {
-        "x": 2.4287632462724,
-        "y": 5.56092667832749
+        "x": 3.0962809293819458,
+        "y": 5.556015480812789
       },
       "isLocked": false,
       "linkedName": null
@@ -46,7 +46,7 @@
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 0.85,
+      "waypointRelativePos": 0.35,
       "rotationDegrees": 0.0,
       "rotateFast": false
     }
@@ -65,6 +65,12 @@
               "data": {
                 "name": "Intake Note"
               }
+            },
+            {
+              "type": "named",
+              "data": {
+                "name": "Arm Score"
+              }
             }
           ]
         }
@@ -79,7 +85,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 175.0,
+    "rotation": 180.0,
     "rotateFast": false
   },
   "reversed": false,

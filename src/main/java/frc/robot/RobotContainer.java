@@ -244,8 +244,9 @@ public class RobotContainer
 
 
         Driver.leftTrigger().whileTrue(Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker));
+        Driver.leftTrigger().onFalse(Intake.Command_StopIntake());
         Driver.leftBumper().whileTrue(Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp));
-
+        Driver.leftBumper().onFalse(Intake.Command_StopIntake());
 //        Driver.x().onTrue(Commands.run(() -> RotationModeIsRobotCentric = !RotationModeIsRobotCentric));
     }
     

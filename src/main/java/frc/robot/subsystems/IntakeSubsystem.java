@@ -26,7 +26,7 @@ public class IntakeSubsystem extends SubsystemBase
     {
         Stowed(PivotLimitReverse + PivotLimitReverseBuffer),
         Intake(-0.05),
-        Shoot_speaker(PivotLimitReverse + PivotLimitReverseBuffer),
+        Shoot_speaker(PivotLimitReverse),
         Amp(0.075),
         Trap(PivotLimitReverse + PivotLimitReverseBuffer),
         Climb(-0.25);
@@ -84,6 +84,7 @@ public class IntakeSubsystem extends SubsystemBase
         CreatePivotMotor();
         CreateIntakeMotor();
         CreateFeederMotor();
+
     }
 
     // --------------------------------------------------------------------------------------------
@@ -160,6 +161,8 @@ public class IntakeSubsystem extends SubsystemBase
                 .withKG(0));
 
         IntakeMotor.getConfigurator().apply(configs);
+
+        IntakeMotor.stopMotor();
     }
 
     // --------------------------------------------------------------------------------------------
@@ -268,8 +271,8 @@ public class IntakeSubsystem extends SubsystemBase
        return Commands.sequence(
            run(() -> {
                FeederMotorPID.setReference(feederMotorIntakeSpeed, CANSparkBase.ControlType.kDutyCycle);
-               IntakeMotor.setControl(IntakeRequest.withOutput(0.15));
-           }).withTimeout(0.1),
+               IntakeMotor.setControl(IntakeRequest.withOutput(3));
+           }).withTimeout(0.2),
            startEnd(
                () -> {
                    currentSpikeCount = 0;
@@ -326,7 +329,11 @@ public class IntakeSubsystem extends SubsystemBase
 
     public Command Command_StopIntake() //use this in auto just in case we miss a note
     {
-        return runOnce(() -> IntakeMotor.stopMotor());
+        return runOnce(() ->
+        {
+            IntakeMotor.stopMotor();
+            FeederMotor.stopMotor();
+        });
     }
 
 
@@ -344,6 +351,8 @@ public class IntakeSubsystem extends SubsystemBase
         SmartDashboard.putNumber("Intake.FeederCurrent", FeederMotor.getOutputCurrent());
 
     }
+
+
 
 }
 
