@@ -160,7 +160,7 @@ public class ArmSubsystem extends SubsystemBase
                 }));
     }
 
-    public Command Command_SetCoastMode(NeutralModeValue mode)
+    public Command Command_SetNeutralMode(NeutralModeValue mode)
     {
         return runOnce(() -> {
             LeftMotor.setNeutralMode(mode);

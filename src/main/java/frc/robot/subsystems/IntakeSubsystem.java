@@ -32,10 +32,7 @@ public class IntakeSubsystem extends SubsystemBase
         Climb(-0.25);
 
         private final double Rotations;
-
-        EPivotPosition(double rotations) {
-            Rotations = rotations;
-        }
+        EPivotPosition(double rotations) { Rotations = rotations; }
     }
 
     public enum EOutakeType
@@ -46,10 +43,18 @@ public class IntakeSubsystem extends SubsystemBase
         trap(0);
 
         private final double DutyCycle;
+        EOutakeType(double dutyCycle) { DutyCycle = dutyCycle; }
+    }
 
-        EOutakeType(double dutyCycle) {
-            DutyCycle = dutyCycle;
-        }
+    enum EFeedType
+    {
+        Intake_FromGround(0.4),
+        Intake_ToFeeder(0.25),
+        Feeder_TakeNote(-0.075),
+        Feeder_GiveNote(0.5);
+
+        private final double DutyCycle;
+        EFeedType(double dutyCycle) { DutyCycle = dutyCycle; }
     }
 
     private final double PivotTolerance = 15.0 / 360.0;
@@ -58,7 +63,6 @@ public class IntakeSubsystem extends SubsystemBase
 
     // Since we zero on the hard stop, add this buffer to when going home so we don't slam into the stop.
     static private final double PivotLimitReverseBuffer = 0.02;
-    private final double TEMP_IntakeDutyCycle = 0.4;
 
 
     // -- Motors
@@ -209,7 +213,7 @@ public class IntakeSubsystem extends SubsystemBase
         });
     }
 
-    public Command Command_SetCoastMode(NeutralModeValue mode)
+    public Command Command_SetNeutralMode(NeutralModeValue mode)
     {
         return runOnce(() -> PivotMotor.setNeutralMode(mode)).ignoringDisable(true);
     }
@@ -220,7 +224,7 @@ public class IntakeSubsystem extends SubsystemBase
         //       spin up the wheels and rely on the invoking command sequence to stop the intake.
         return runOnce(() ->
         {
-            IntakeMotor.setControl(IntakeRequest.withOutput(TEMP_IntakeDutyCycle));
+            IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_FromGround.DutyCycle));
             //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
         });
     }
@@ -231,7 +235,7 @@ public class IntakeSubsystem extends SubsystemBase
             () -> {
                 currentSpikeCount = 0;
                 lastCurrent = IntakeMotor.getStatorCurrent().getValue();
-                IntakeMotor.setControl(IntakeRequest.withOutput(TEMP_IntakeDutyCycle));
+                IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_FromGround.DutyCycle));
             },
             () -> {
                 IntakeMotor.stopMotor();

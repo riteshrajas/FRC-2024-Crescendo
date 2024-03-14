@@ -4,17 +4,12 @@
 
 package frc.robot;
 
-import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.math.geometry.Pose2d;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.net.PortForwarder;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.subsystems.ArmSubsystem;
-import frc.robot.subsystems.IntakeSubsystem;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -25,13 +20,13 @@ import frc.robot.subsystems.IntakeSubsystem;
 public class Robot extends TimedRobot
 {
     private Command m_autonomousCommand;
-    private RobotContainer m_robotContainer;
+    private RobotContainer RobotContainer;
 
 
     @Override
     public void robotInit()
     {
-        m_robotContainer = new RobotContainer();
+        RobotContainer = new RobotContainer();
 
 
         for (int port = 5800; port <= 5807; port++)
@@ -41,7 +36,7 @@ public class Robot extends TimedRobot
 
         //CameraServer.startAutomaticCapture();
 
-        m_robotContainer.drivetrain.getDaqThread().setThreadPriority(99);
+        RobotContainer.drivetrain.getDaqThread().setThreadPriority(99);
 
         System.out.println("Robot Initialized!");
 
@@ -72,7 +67,7 @@ public class Robot extends TimedRobot
         SmartDashboard.putNumber("Target Ta", LimelightHelpers.getTA(""));
 
         // -- Output the robot orientation to the dashboard
-        SmartDashboard.putNumber("Robot Yaw", m_robotContainer.drivetrain.getPigeon2().getYaw().getValue());
+        SmartDashboard.putNumber("Robot Yaw", RobotContainer.drivetrain.getPigeon2().getYaw().getValue());
 
     }
 
@@ -93,7 +88,7 @@ public class Robot extends TimedRobot
     @Override
     public void autonomousInit()
     {
-        m_autonomousCommand = m_robotContainer.GetAutonomousCommand();
+        m_autonomousCommand = RobotContainer.GetAutonomousCommand();
 
         // schedule the autonomous command (example)
         if (m_autonomousCommand != null)
@@ -121,6 +116,8 @@ public class Robot extends TimedRobot
             m_autonomousCommand.cancel();
         }
 
+        RobotContainer.Arm.Command_SetNeutralMode(NeutralModeValue.Brake);
+        RobotContainer.Intake.Command_SetNeutralMode(NeutralModeValue.Brake);
     }
 
     @Override

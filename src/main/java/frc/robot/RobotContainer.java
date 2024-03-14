@@ -272,8 +272,8 @@ public class RobotContainer
         Operator.povUp().onTrue(Pose.Command_GoToPose(PoseManager.EPose.PreClimb));
         Operator.povDown().onTrue(Arm.Command_Climb());
 
-        Operator.povLeft().onTrue(Arm.Command_SetCoastMode(NeutralModeValue.Brake).alongWith(Intake.Command_SetCoastMode(NeutralModeValue.Brake)));
-        Operator.povRight().onTrue(Arm.Command_SetCoastMode(NeutralModeValue.Coast).alongWith(Intake.Command_SetCoastMode(NeutralModeValue.Coast)));
+        Operator.povLeft().onTrue(Arm.Command_SetNeutralMode(NeutralModeValue.Brake).alongWith(Intake.Command_SetNeutralMode(NeutralModeValue.Brake)));
+        Operator.povRight().onTrue(Arm.Command_SetNeutralMode(NeutralModeValue.Coast).alongWith(Intake.Command_SetNeutralMode(NeutralModeValue.Coast)));
 
         // Operator.rightBumper().onTrue(Pose.Command_AutoPose());
         Operator.rightBumper().whileTrue(Intake.Command_MoveNote(true));
