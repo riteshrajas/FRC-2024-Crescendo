@@ -179,11 +179,7 @@ public class RobotContainer
 
    Command Command_IntakeNoteSequence()
     {
-        return Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed)
-        .andThen(Intake.Command_PreIntakeSpinUp())
-        .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake))
-        .andThen(Intake.Command_PreIntakeSpinUp().alongWith(Commands.waitSeconds(0.25)))
-        .andThen(Intake.Command_IntakeNote());
+       return Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed).andThen(Intake.Command_IntakeNote());
     }
 
     public Command Command_AutoPose()
@@ -236,12 +232,16 @@ public class RobotContainer
         Driver.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldRelative).ignoringDisable(true));
         Driver.a().whileTrue(Command_TestLineup());
 
-        Driver.rightTrigger()
-            .whileTrue(Command_IntakeNoteSequence())
-            .onFalse(Intake.Command_StopIntake() // Stop intake here is temporary until we can refactor the subsystems to make the intake motor separate from the pivot motor
-            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)));
+//        Driver.rightTrigger()
+//            .whileTrue(Command_IntakeNoteSequence())
+//            .onFalse(Intake.Command_StopIntake() // Stop intake here is temporary until we can refactor the subsystems to make the intake motor separate from the pivot motor
+//            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)));
 
-
+        Driver.rightTrigger().onTrue(Command_IntakeNoteSequence());
+        Driver.rightTrigger().onFalse(
+            Commands.sequence(
+                Intake.Command_StopIntake(),
+                Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)));
 
         Driver.leftTrigger().whileTrue(Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker));
         Driver.leftTrigger().onFalse(Intake.Command_StopIntake());
@@ -260,8 +260,6 @@ public class RobotContainer
         Operator.start().onTrue(Arm.Command_ZeroArmEncoder().alongWith(Intake.Command_ZeroPivotEncoder().ignoringDisable(true)));
         Operator.back().whileTrue(Arm.Command_ManualArmControl());
 
-        //Operator.rightTrigger().onTrue(Intake.Command_Feed());
-        Operator.rightTrigger().onTrue(Intake.Command_FeederTakeNote());
 
 
         Operator.a().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Stowed));
@@ -275,11 +273,10 @@ public class RobotContainer
         Operator.povLeft().onTrue(Arm.Command_SetNeutralMode(NeutralModeValue.Brake).alongWith(Intake.Command_SetNeutralMode(NeutralModeValue.Brake)));
         Operator.povRight().onTrue(Arm.Command_SetNeutralMode(NeutralModeValue.Coast).alongWith(Intake.Command_SetNeutralMode(NeutralModeValue.Coast)));
 
-        // Operator.rightBumper().onTrue(Pose.Command_AutoPose());
         Operator.rightBumper().whileTrue(Intake.Command_MoveNote(true));
         Operator.leftBumper().whileTrue(Intake.Command_MoveNote(false));
 
-        //Operator.rightTrigger().whileTrue(Command_AutoPose()); // Should now return pose for current tag
+        Operator.rightTrigger().onTrue(Intake.Command_FeederTakeNote(false));
 
     }
 
