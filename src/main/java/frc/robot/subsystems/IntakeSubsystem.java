@@ -244,6 +244,7 @@ public class IntakeSubsystem extends SubsystemBase
 
            Commands.waitUntil(() -> {
                 double curCurrent = IntakeMotor.getStatorCurrent().getValue();
+
                 SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
 
                 if (curCurrent - lastCurrent > 15)
