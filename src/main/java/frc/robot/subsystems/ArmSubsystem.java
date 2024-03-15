@@ -151,15 +151,15 @@ public class ArmSubsystem extends SubsystemBase
     public Command Command_ManualArmControl()
     {
         return runOnce(() -> ManualArmControlTarget = LeftMotor.getPosition().getValue())
-                .andThen(run(() ->
-                {
-                    double y = RobotContainer.Operator.getLeftY() * 0.001;
-                    if (Math.abs(y) < 0.001) { return; }
+            .andThen(run(() ->
+            {
+                double y = RobotContainer.Operator.getLeftY() * 0.001;
+                if (Math.abs(y) < 0.001) { return; }
 
-                    ManualArmControlTarget = MathUtil.clamp(ManualArmControlTarget + y, LowerLimit, UpperLimit);
-                    //LeftMotor.setControl(PoseRequest.withPosition(ManualArmControlTarget));
-                    LeftMotor.setControl(ClimbRequest.withPosition(ManualArmControlTarget));
-                }));
+                ManualArmControlTarget = MathUtil.clamp(ManualArmControlTarget + y, LowerLimit, UpperLimit);
+                //LeftMotor.setControl(PoseRequest.withPosition(ManualArmControlTarget));
+                LeftMotor.setControl(ClimbRequest.withPosition(ManualArmControlTarget));
+            }));
     }
 
     public Command Command_SetNeutralMode(NeutralModeValue mode)

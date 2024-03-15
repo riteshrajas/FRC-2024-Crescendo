@@ -221,17 +221,6 @@ public class IntakeSubsystem extends SubsystemBase
         return runOnce(() -> PivotMotor.setNeutralMode(mode)).ignoringDisable(true);
     }
 
-    public Command Command_PreIntakeSpinUp() {
-        // TODO: This should be a startEnd command that stops the motor when it finishes in case the command gets interrupted,
-        //       but we can't do that right now due to how the intake and arm subsystems are divided up. Until then we'll just
-        //       spin up the wheels and rely on the invoking command sequence to stop the intake.
-        return runOnce(() ->
-        {
-            IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_FromGround.DutyCycle));
-            //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
-        });
-    }
-
     public Command Command_IntakeNote(boolean fromSource)
     {
         return Commands.sequence(
