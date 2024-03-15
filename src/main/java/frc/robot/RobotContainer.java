@@ -240,7 +240,7 @@ public class RobotContainer
 
         Driver.leftTrigger().onTrue(
             Commands.sequence(
-                Pose.Command_GoToPose(PoseManager.EPose.Speaker),
+                //Pose.Command_GoToPose(PoseManager.EPose.Speaker),
                 Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker),
                 Pose.Command_GoToPose(PoseManager.EPose.Stowed))
         );
@@ -275,13 +275,13 @@ public class RobotContainer
         Operator.povLeft().onTrue(Arm.Command_SetNeutralMode(NeutralModeValue.Brake).alongWith(Intake.Command_SetNeutralMode(NeutralModeValue.Brake)));
         Operator.povRight().onTrue(Arm.Command_SetNeutralMode(NeutralModeValue.Coast).alongWith(Intake.Command_SetNeutralMode(NeutralModeValue.Coast)));
 
-        Operator.rightBumper().whileTrue(Intake.Command_MoveNote(true));
-        Operator.leftBumper().whileTrue(Intake.Command_MoveNote(false));
+        Operator.rightBumper().whileTrue(Intake.Command_MoveNote(false));
+        Operator.leftBumper().whileTrue(Intake.Command_MoveNote(true));
 
         Operator.leftTrigger().onTrue(Intake.Command_FeederTakeNote(false));
 
         Operator.rightTrigger().onTrue(Command_IntakeNoteSequence(true));
-        Operator.rightTrigger().onFalse(Commands.runOnce(() -> Intake.RequestCancelIntake()));
+        Operator.rightTrigger().onFalse(Pose.Command_GoToPose(PoseManager.EPose.Stowed).andThen(Commands.runOnce(() -> Intake.RequestCancelIntake())));
     }
 
     private SwerveRequest GetDefaultDriveRequest()

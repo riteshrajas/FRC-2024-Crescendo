@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.Constants;
 
 import com.ctre.phoenix6.configs.*;
+import frc.robot.LimelightHelpers;
 import frc.robot.RobotContainer;
 //*TODO: Find acutal poses, work out motor configurations, do commmands  and logic for moving pivot
 
@@ -240,6 +241,8 @@ public class IntakeSubsystem extends SubsystemBase
 
     public Command Command_IntakeNote(boolean fromSource)
     {
+        GenericHID hid = fromSource ? RobotContainer.Operator.getHID() : RobotContainer.Driver.getHID();
+
         return Commands.sequence(
            Commands.print("Intake note starting"),
 
@@ -257,6 +260,10 @@ public class IntakeSubsystem extends SubsystemBase
            runOnce(() -> {
                 currentSpikeCount = 0;
                 lastCurrent = IntakeMotor.getStatorCurrent().getValue();
+               if (fromSource)
+               {
+                   LimelightHelpers.setLEDMode_ForceBlink("");
+               }
             }),
 
            Commands.waitUntil(() -> {
@@ -273,10 +280,23 @@ public class IntakeSubsystem extends SubsystemBase
                 if (currentSpikeCount >= 1)
                 {
                     IsFeedingNote = true;
+                    LimelightHelpers.setLEDMode_ForceOff("");
                     return true;
                 }
                 return false;
             }),
+
+           runOnce(() -> CommandScheduler.getInstance().schedule(
+               Commands.startEnd(
+                   () -> {
+                       RobotContainer.Operator.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
+                       RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
+                   },
+                   () -> {
+                       RobotContainer.Operator.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
+                       RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
+                   }
+               ).withTimeout(0.5))),
 
            Commands.print("Note got - stowing"),
            runOnce(() -> PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations))),
@@ -293,6 +313,7 @@ public class IntakeSubsystem extends SubsystemBase
             if (!IsFeedingNote)
             {
                 StopMotors();
+                LimelightHelpers.setLEDMode_ForceOff("");
             }
         });
     }
@@ -324,12 +345,6 @@ public class IntakeSubsystem extends SubsystemBase
             })
             .withTimeout(1),
 
-            runOnce(() -> CommandScheduler.getInstance().schedule(
-                Commands.startEnd(
-                    () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1),
-                    () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0)
-                ).withTimeout(0.5))),
-
             Commands.waitSeconds(0.25)
 
         ).finallyDo(() -> {
@@ -342,13 +357,14 @@ public class IntakeSubsystem extends SubsystemBase
     {
         return startEnd(
             () -> {
-                IntakeMotor.setControl(IntakeRequest.withOutput(forward ? -0.5: 0.5));
-                FeederMotor.set(forward ? 0.1: -0.1);
+                IntakeMotor.setControl(IntakeRequest.withOutput(forward ? -0.25: 0.25));
+                FeederMotor.set(forward ? 0.15: -0.15);
 
             },
             () -> StopMotors()
         );
     }
+
 
     public Command Command_Outtake(EOutakeType outtakeType)
     {
