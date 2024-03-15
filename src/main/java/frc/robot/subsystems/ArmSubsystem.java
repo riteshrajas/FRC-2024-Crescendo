@@ -140,7 +140,7 @@ public class ArmSubsystem extends SubsystemBase
 
     public Command Command_Climb()
     {
-        return runOnce(() -> LeftMotor.setControl(ClimbRequest));
+        return runOnce(() -> LeftMotor.setControl(ClimbRequest.withPosition(LowerLimit)));
     }
 
     public Command Command_ZeroArmEncoder()
@@ -153,11 +153,12 @@ public class ArmSubsystem extends SubsystemBase
         return runOnce(() -> ManualArmControlTarget = LeftMotor.getPosition().getValue())
                 .andThen(run(() ->
                 {
-                    double y = RobotContainer.Operator.getLeftY() * 0.1;
-                    if (Math.abs(y) < 0.1) { return; }
+                    double y = RobotContainer.Operator.getLeftY() * 0.001;
+                    if (Math.abs(y) < 0.001) { return; }
 
                     ManualArmControlTarget = MathUtil.clamp(ManualArmControlTarget + y, LowerLimit, UpperLimit);
-                    LeftMotor.setControl(PoseRequest.withPosition(ManualArmControlTarget));
+                    //LeftMotor.setControl(PoseRequest.withPosition(ManualArmControlTarget));
+                    LeftMotor.setControl(ClimbRequest.withPosition(ManualArmControlTarget));
                 }));
     }
 
