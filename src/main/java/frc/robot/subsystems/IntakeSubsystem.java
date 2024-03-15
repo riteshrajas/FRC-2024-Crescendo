@@ -197,6 +197,23 @@ public class IntakeSubsystem extends SubsystemBase
         FeederMotor.stopMotor();
     }
 
+    // TODO: Test this change - it should fix the interrupt on let go. If it does, move the rumble
+    public void RequestCancelIntake()
+    {
+        if (IsFeedingNote) { return; }
+
+        CommandScheduler.getInstance().schedule(
+            Commands.sequence(
+                Command_StopIntake(),
+                Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed))
+        );
+    }
+
+    private void StopMotors()
+    {
+        IntakeMotor.stopMotor();
+        FeederMotor.stopMotor();
+    }
 
     public double GetPivotPos() {
         return PivotMotor.getPosition().getValue();
@@ -231,7 +248,7 @@ public class IntakeSubsystem extends SubsystemBase
                 IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_FromGround.DutyCycle));
             }),
 
-           Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake).unless(() -> fromSource),
+           Command_SetPivotPosition(fromSource ? EPivotPosition.Source : EPivotPosition.Intake),
 
            Commands.waitSeconds(0.25),
 
@@ -267,15 +284,14 @@ public class IntakeSubsystem extends SubsystemBase
            runOnce(() -> IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_ToFeeder.DutyCycle))),
            runOnce(() -> FeederMotor.set(EFeedType.Feeder_TakeNote.DutyCycle)),
 
-           Commands.waitSeconds(0.1),
+           Commands.waitSeconds(0.1).unless(() -> fromSource),
 
            Command_FeederTakeNote(true)
         )
         .finallyDo(() -> {
             if (!IsFeedingNote)
             {
-                IntakeMotor.stopMotor();
-                FeederMotor.stopMotor();
+                StopMotors();
             }
         });
     }
@@ -296,10 +312,13 @@ public class IntakeSubsystem extends SubsystemBase
             Commands.waitUntil(() -> {
                 double curCurrent = FeederMotor.getOutputCurrent();
                 SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
+
                 if (curCurrent - lastCurrent > 5)
                 {
                     currentSpikeCount++;
                 }
+                lastCurrent = curCurrent;
+
                 return currentSpikeCount >= 1;
             })
             .withTimeout(1),
@@ -313,8 +332,7 @@ public class IntakeSubsystem extends SubsystemBase
             Commands.waitSeconds(0.25)
 
         ).finallyDo(() -> {
-            FeederMotor.stopMotor();
-            IntakeMotor.stopMotor();
+            StopMotors();
             IsFeedingNote = false;
         });
     }
@@ -327,31 +345,25 @@ public class IntakeSubsystem extends SubsystemBase
                 FeederMotor.set(forward ? 0.1: -0.1);
 
             },
-            () -> {
-                IntakeMotor.stopMotor();
-                FeederMotor.stopMotor();
-            }
+            () -> StopMotors()
         );
     }
 
     public Command Command_Outtake(EOutakeType outtakeType)
     {
         return Commands.sequence(
-           run(() -> IntakeMotor.setControl(IntakeRequest.withOutput(outtakeType.DutyCycle)))
-               .withTimeout(0.25),
-           run(() -> FeederMotor.set(0.5))
-               .withTimeout(0.25)
+            runOnce(() -> IntakeMotor.setControl(IntakeRequest.withOutput(outtakeType.DutyCycle))),
+            Commands.waitSeconds(0.25),
+            runOnce(() -> FeederMotor.set(0.5)),
+            Commands.waitSeconds(0.5),
+            Command_StopIntake()
         );
     }
 
 
     public Command Command_StopIntake() //use this in auto just in case we miss a note
     {
-        return runOnce(() ->
-        {
-            IntakeMotor.stopMotor();
-            FeederMotor.stopMotor();
-        });
+        return runOnce(() -> StopMotors());
     }
 
 
