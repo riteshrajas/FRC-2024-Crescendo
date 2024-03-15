@@ -29,7 +29,8 @@ public class IntakeSubsystem extends SubsystemBase
         Shoot_speaker(PivotLimitReverse),
         Amp(0.075),
         Trap(PivotLimitReverse + PivotLimitReverseBuffer),
-        Climb(-0.25);
+        Climb(-0.25),
+        Source(-0.237);
 
         private final double Rotations;
         EPivotPosition(double rotations) { Rotations = rotations; }
@@ -231,32 +232,32 @@ public class IntakeSubsystem extends SubsystemBase
         });
     }
 
-    public Command Command_IntakeNote()
+    public Command Command_IntakeNote(boolean fromSource)
     {
         return Commands.sequence(
-                               Commands.print("Intake note starting"),
+           Commands.print("Intake note starting"),
 
-                               runOnce(() -> {
+           runOnce(() -> {
                 IsFeedingNote = false;
                 IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_FromGround.DutyCycle));
             }),
 
-                               Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake),
+           Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake).unless(() -> fromSource),
 
-                               Commands.waitSeconds(0.25),
+           Commands.waitSeconds(0.25),
 
-                               Commands.print("On ground, looking for note"),
+           Commands.print(fromSource ? "at source, looking for note" : "On ground, looking for note"),
 
-                               runOnce(() -> {
+           runOnce(() -> {
                 currentSpikeCount = 0;
                 lastCurrent = IntakeMotor.getStatorCurrent().getValue();
             }),
 
-                               Commands.waitUntil(() -> {
+           Commands.waitUntil(() -> {
                 double curCurrent = IntakeMotor.getStatorCurrent().getValue();
                 SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
 
-                if (curCurrent - lastCurrent > 25)
+                if (curCurrent - lastCurrent > 15)
                 {
                     currentSpikeCount++;
                 }
@@ -270,22 +271,16 @@ public class IntakeSubsystem extends SubsystemBase
                 return false;
             }),
 
-                               runOnce(() -> CommandScheduler.getInstance().schedule(
-                Commands.startEnd(
-                    () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1),
-                    () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0)
-                ).withTimeout(0.5))),
+           Commands.print("Note got - stowing"),
+           runOnce(() -> PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations))),
 
-                               Commands.print("Note got - stowing"),
-                               runOnce(() -> PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations))),
+           Commands.print("slowing down intake, spinning up feeder"),
+           runOnce(() -> IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_ToFeeder.DutyCycle))),
+           runOnce(() -> FeederMotor.set(EFeedType.Feeder_TakeNote.DutyCycle)),
 
-                               Commands.print("slowing down intake, spinning up feeder"),
-                               runOnce(() -> IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_ToFeeder.DutyCycle))),
-                               runOnce(() -> FeederMotor.set(EFeedType.Feeder_TakeNote.DutyCycle)),
+           Commands.waitSeconds(0.1),
 
-                               Commands.waitSeconds(0.1),
-
-                               Command_FeederTakeNote(true)
+           Command_FeederTakeNote(true)
         )
         .finallyDo(() -> {
             if (!IsFeedingNote)
@@ -320,6 +315,12 @@ public class IntakeSubsystem extends SubsystemBase
             })
             .withTimeout(1),
 
+            runOnce(() -> CommandScheduler.getInstance().schedule(
+                Commands.startEnd(
+                    () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1),
+                    () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0)
+                ).withTimeout(0.5))),
+
             Commands.waitSeconds(0.25)
 
         ).finallyDo(() -> {
@@ -334,7 +335,7 @@ public class IntakeSubsystem extends SubsystemBase
         return startEnd(
             () -> {
                 IntakeMotor.setControl(IntakeRequest.withOutput(forward ? -0.5: 0.5));
-                FeederMotor.set(forward ? 0.15: -0.15);
+                FeederMotor.set(forward ? 0.1: -0.1);
 
             },
             () -> {

@@ -14,7 +14,8 @@ public class PoseManager
         Intake,
         Amp,
         Speaker,
-        PreClimb
+        PreClimb,
+        Source
     }
 
     private ArmSubsystem Arm;
@@ -96,6 +97,14 @@ public class PoseManager
             return Commands.sequence(
                 Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Climb_FirstPos),
                 Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Climb)
+            );
+        }
+
+        if (pose == EPose.Source)
+        {
+            return Commands.sequence(
+                    Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Source),
+                    Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Source)
             );
         }
 
