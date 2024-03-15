@@ -179,8 +179,10 @@ public class RobotContainer
 
    Command Command_IntakeNoteSequence(boolean fromSource)
     {
-       return Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed)
-                 .andThen(Intake.Command_IntakeNote(fromSource));
+        return Commands.sequence(
+            Arm.Command_SetPosition(fromSource ? ArmSubsystem.EArmPosition.Source : ArmSubsystem.EArmPosition.Stowed),
+            Intake.Command_IntakeNote(fromSource)
+        );
     }
 
     public Command Command_AutoPose()
@@ -233,22 +235,21 @@ public class RobotContainer
         Driver.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldRelative).ignoringDisable(true));
         Driver.a().whileTrue(Command_TestLineup());
 
-//        Driver.rightTrigger()
-//            .whileTrue(Command_IntakeNoteSequence())
-//            .onFalse(Intake.Command_StopIntake() // Stop intake here is temporary until we can refactor the subsystems to make the intake motor separate from the pivot motor
-//            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)));
-
         Driver.rightTrigger().onTrue(Command_IntakeNoteSequence(false));
-        Driver.rightTrigger().onFalse(
-            Commands.sequence(
-                Intake.Command_StopIntake(),
-                Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)));
+        Driver.rightTrigger().onFalse(Commands.runOnce(() -> Intake.RequestCancelIntake()));
 
-        Driver.leftTrigger().whileTrue(Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker));
-        Driver.leftTrigger().onFalse(Intake.Command_StopIntake().andThen(Pose.Command_GoToPose(PoseManager.EPose.Stowed)));
-        Driver.leftBumper().whileTrue(Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp));
-        Driver.leftBumper().onFalse(Intake.Command_StopIntake());
-//        Driver.x().onTrue(Commands.run(() -> RotationModeIsRobotCentric = !RotationModeIsRobotCentric));
+        Driver.leftTrigger().onTrue(
+            Commands.sequence(
+                Pose.Command_GoToPose(PoseManager.EPose.Speaker),
+                Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker),
+                Pose.Command_GoToPose(PoseManager.EPose.Stowed))
+        );
+
+        Driver.leftBumper().onTrue(
+            Commands.sequence(
+                Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp),
+                Pose.Command_GoToPose(PoseManager.EPose.Stowed))
+        );
     }
     
     
@@ -280,7 +281,7 @@ public class RobotContainer
         Operator.leftTrigger().onTrue(Intake.Command_FeederTakeNote(false));
 
         Operator.rightTrigger().onTrue(Command_IntakeNoteSequence(true));
-        Operator.rightTrigger().onFalse(Intake.Command_StopIntake());
+        Operator.rightTrigger().onFalse(Commands.runOnce(() -> Intake.RequestCancelIntake()));
     }
 
     private SwerveRequest GetDefaultDriveRequest()
