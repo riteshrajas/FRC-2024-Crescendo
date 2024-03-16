@@ -12,6 +12,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -28,23 +29,24 @@ import friarLib2.math.LookupTable;
 
 
 
-/**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and trigger mappings) should be declared here.
- */
 public class RobotContainer
 {
+    static private RobotContainer _This;
+    static public RobotContainer Get() { return _This; }
     static public final PowerDistribution PDH = new PowerDistribution();
+
     // --------------------------------------------------------------------------------------------
     // -- Controllers
     // --------------------------------------------------------------------------------------------
-    public static CommandXboxController Driver = new CommandXboxController(0);
-    public static CommandXboxController Operator = new CommandXboxController(1);
+    static public CommandXboxController Driver = new CommandXboxController(0);
+    static public CommandXboxController Operator = new CommandXboxController(1);
 
-    static private final DigitalInput ArmReset = new DigitalInput(9);
 
+    // --------------------------------------------------------------------------------------------
+    // -- Misc Input
+    // --------------------------------------------------------------------------------------------
+    static private final DigitalInput DIO_Zero = new DigitalInput(9);
+    static private final Trigger Trigger_Zero = new Trigger(() -> DIO_Zero.get());
 
 
     // --------------------------------------------------------------------------------------------
@@ -63,11 +65,14 @@ public class RobotContainer
 
     private DriverStation.Alliance DefaultAlliance = DriverStation.Alliance.Blue;
 
-    private DriverStation.Alliance CurrentAlliance = DriverStation.getAlliance()
-                                                                  .get();
+    private DriverStation.Alliance CurrentAlliance = DriverStation.getAlliance().get();
+
+
+
+
 
     // --------------------------------------------------------------------------------------------
-    // -- Subsystems~
+    // -- Subsystems
     // --------------------------------------------------------------------------------------------
     public final SwerveSubsystem drivetrain = TunerConstants.DriveTrain;
     public final ArmSubsystem Arm = new ArmSubsystem();
@@ -102,6 +107,10 @@ public class RobotContainer
 
     public RobotContainer()
     {
+        _This = this;
+
+
+
         ConfigureAutoCommands();
         autoChooser = AutoBuilder.buildAutoChooser();
         SmartDashboard.putData("Auto Chooser", autoChooser);
@@ -114,7 +123,8 @@ public class RobotContainer
             Pose.Command_GoToPose(PoseManager.EPose.Stowed)));
 
         SetDefaultCommands();
-        
+
+        ConfigureMiscBindings();
         ConfigureDriverBindings();
         ConfigureOperatorBindings();
 
@@ -186,6 +196,26 @@ public class RobotContainer
 
    }
 
+   public Command Command_RumbleControllers()
+   {
+       return Commands.runOnce(() ->
+           CommandScheduler.getInstance().schedule(
+               Commands.sequence(
+                   Commands.waitSeconds(0.5),
+                   Commands.runOnce(() -> {
+                       Operator.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
+                       Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
+                   }),
+                   Commands.waitSeconds(0.5),
+                   Commands.runOnce(() -> {
+                       Operator.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
+                       Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
+                   })
+               )
+           )
+       );
+   }
+
    Command Command_IntakeNoteSequence(boolean fromSource)
     {
         return Commands.sequence(
@@ -221,8 +251,12 @@ public class RobotContainer
         drivetrain.setDefaultCommand(drivetrain.applyRequest(this::GetDefaultDriveRequest)
             .ignoringDisable(true));
 
-        var resetTrigger = new Trigger(() -> !ArmReset.get());
-        resetTrigger.onTrue(
+
+    }
+
+    private void ConfigureMiscBindings()
+    {
+        Trigger_Zero.onTrue(
             Commands.sequence(
                 Intake.Command_ZeroPivotEncoder(),
                 Arm.Command_ZeroArmEncoder(),
@@ -234,7 +268,6 @@ public class RobotContainer
             .unless(() -> DriverStation.isEnabled())
             .ignoringDisable(true));
     }
-
 
     // --------------------------------------------------------------------------------------------
     // -- Driver
@@ -259,9 +292,15 @@ public class RobotContainer
         Driver.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldRelative).ignoringDisable(true));
         Driver.a().whileTrue(Command_TestLineup());
 
+        // -- Intake
         Driver.rightTrigger().onTrue(Command_IntakeNoteSequence(false));
-        Driver.rightTrigger().onFalse(Commands.runOnce(() -> Intake.RequestCancelIntake()));
+        Driver.rightTrigger().onFalse(
+            Commands.sequence(
+                Commands.waitSeconds(0.5),
+                Commands.runOnce(() -> Intake.RequestCancelIntake()))
+        );
 
+        // -- Outtake speaker
         Driver.leftTrigger().onTrue(
             Commands.sequence(
                 //Pose.Command_GoToPose(PoseManager.EPose.Speaker),
@@ -269,6 +308,7 @@ public class RobotContainer
                 Pose.Command_GoToPose(PoseManager.EPose.Stowed))
         );
 
+        // -- Outtake Amp
         Driver.leftBumper().onTrue(
             Commands.sequence(
                 Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp),
@@ -326,14 +366,14 @@ public class RobotContainer
         double finalX = x * deflectionLut * TunerConstants.kSpeedAt12VoltsMps;
         double finalY = y * deflectionLut * TunerConstants.kSpeedAt12VoltsMps;
 
-        SmartDashboard.putNumber("XRaw", x);
-        SmartDashboard.putNumber("YRaw", y);
-
-        SmartDashboard.putNumber("Deflection", deflection);
-        SmartDashboard.putNumber("Deflectionlut", deflectionLut);
-
-        SmartDashboard.putNumber("Xfinal", finalX);
-        SmartDashboard.putNumber("Yfinal", finalY);
+//        SmartDashboard.putNumber("XRaw", x);
+//        SmartDashboard.putNumber("YRaw", y);
+//
+//        SmartDashboard.putNumber("Deflection", deflection);
+//        SmartDashboard.putNumber("Deflectionlut", deflectionLut);
+//
+//        SmartDashboard.putNumber("Xfinal", finalX);
+//        SmartDashboard.putNumber("Yfinal", finalY);
 
         if (RotationModeIsRobotCentric)
         {
@@ -375,7 +415,7 @@ public class RobotContainer
         double magicScalar = 0.02; // The steering gains seem borked, but I ran out of time to figure out how to tune them correctly, so here's a magic number to get it to turn decently.
 
         double finalAngVelocity = -TurnLut.GetValue(Driver.getRightX()) * MaxRotationsPerSecond * 360;
-        SmartDashboard.putNumber("FinalAngVel", Math.toRadians(finalAngVelocity));
+        // SmartDashboard.putNumber("FinalAngVel", Math.toRadians(finalAngVelocity));
         return finalAngVelocity * magicScalar;
     }
 

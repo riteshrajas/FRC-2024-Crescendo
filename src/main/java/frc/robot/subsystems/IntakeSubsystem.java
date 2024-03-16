@@ -50,7 +50,8 @@ public class IntakeSubsystem extends SubsystemBase
 
     enum EFeedType
     {
-        Intake_FromGround(0.4),
+        Intake_FromGround(0.6),
+        Intake_FromSource(0.4),
         Intake_ToFeeder(0.3),
         Feeder_TakeNote(-0.075),
         Feeder_GiveNote(0.5);
@@ -243,14 +244,12 @@ public class IntakeSubsystem extends SubsystemBase
 
     public Command Command_IntakeNote(boolean fromSource)
     {
-        GenericHID hid = fromSource ? RobotContainer.Operator.getHID() : RobotContainer.Driver.getHID();
-
         return Commands.sequence(
            Commands.print("Intake note starting"),
 
            runOnce(() -> {
                 IsFeedingNote = false;
-                IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_FromGround.DutyCycle));
+                IntakeMotor.setControl(IntakeRequest.withOutput(fromSource ? EFeedType.Intake_FromSource.DutyCycle :  EFeedType.Intake_FromGround.DutyCycle));
             }),
 
            Command_SetPivotPosition(fromSource ? EPivotPosition.Source : EPivotPosition.Intake),
@@ -260,8 +259,8 @@ public class IntakeSubsystem extends SubsystemBase
            Commands.print(fromSource ? "at source, looking for note" : "On ground, looking for note"),
 
            runOnce(() -> {
-                currentSpikeCount = 0;
-                lastCurrent = IntakeMotor.getStatorCurrent().getValue();
+               currentSpikeCount = 0;
+               lastCurrent = IntakeMotor.getStatorCurrent().getValue();
                if (fromSource)
                {
                    LimelightHelpers.setLEDMode_ForceBlink("");
@@ -289,17 +288,7 @@ public class IntakeSubsystem extends SubsystemBase
                 return false;
             }),
 
-           runOnce(() -> CommandScheduler.getInstance().schedule(
-               Commands.startEnd(
-                   () -> {
-                       RobotContainer.Operator.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
-                       RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
-                   },
-                   () -> {
-                       RobotContainer.Operator.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
-                       RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
-                   }
-               ).withTimeout(0.5))),
+           RobotContainer.Get().Command_RumbleControllers(),
 
            Commands.print("Note got - stowing"),
            runOnce(() -> PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations))),
@@ -308,7 +297,7 @@ public class IntakeSubsystem extends SubsystemBase
            runOnce(() -> IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_ToFeeder.DutyCycle))),
            runOnce(() -> FeederMotor.set(EFeedType.Feeder_TakeNote.DutyCycle)),
 
-           Commands.waitSeconds(0.2).unless(() -> fromSource),
+           Commands.waitSeconds(0.1).unless(() -> fromSource),
 
            Command_FeederTakeNote(true)
         )
