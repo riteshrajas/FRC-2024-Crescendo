@@ -6,10 +6,13 @@ package frc.robot;
 
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.net.PortForwarder;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.subsystems.IntakeSubsystem;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -21,6 +24,9 @@ public class Robot extends TimedRobot
 {
     private Command m_autonomousCommand;
     private RobotContainer RobotContainer;
+
+
+
 
 
     @Override
@@ -39,6 +45,12 @@ public class Robot extends TimedRobot
         RobotContainer.drivetrain.getDaqThread().setThreadPriority(99);
 
         System.out.println("Robot Initialized!");
+
+        CommandScheduler.getInstance().schedule(Commands.sequence(
+            Commands.runOnce(() -> LimelightHelpers.setLEDMode_ForceBlink("")),
+            Commands.waitSeconds(0.5),
+            Commands.runOnce(() -> LimelightHelpers.setLEDMode_ForceOff(""))
+        ).ignoringDisable(true));
 
     }
 
@@ -69,6 +81,8 @@ public class Robot extends TimedRobot
         // -- Output the robot orientation to the dashboard
         SmartDashboard.putNumber("Robot Yaw", RobotContainer.drivetrain.getPigeon2().getYaw().getValue());
 
+
+
     }
 
 
@@ -79,7 +93,10 @@ public class Robot extends TimedRobot
     public void disabledInit() { }
 
     @Override
-    public void disabledPeriodic() { }
+    public void disabledPeriodic()
+    {
+
+    }
 
 
     // -------------------------------------------------------------------------------------------------------------------------------------

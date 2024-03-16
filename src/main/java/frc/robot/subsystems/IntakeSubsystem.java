@@ -85,6 +85,8 @@ public class IntakeSubsystem extends SubsystemBase
     double lastCurrent = 0;
     int currentSpikeCount = 0;
     boolean IsFeedingNote = false;
+    boolean HasGottenNote = false;
+
     public boolean GetIsFeedingNote() { return IsFeedingNote; }
 
     public IntakeSubsystem()
@@ -280,6 +282,7 @@ public class IntakeSubsystem extends SubsystemBase
                 if (currentSpikeCount >= 1)
                 {
                     IsFeedingNote = true;
+                    HasGottenNote = true;
                     LimelightHelpers.setLEDMode_ForceOff("");
                     return true;
                 }
@@ -305,7 +308,7 @@ public class IntakeSubsystem extends SubsystemBase
            runOnce(() -> IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_ToFeeder.DutyCycle))),
            runOnce(() -> FeederMotor.set(EFeedType.Feeder_TakeNote.DutyCycle)),
 
-           Commands.waitSeconds(0.1).unless(() -> fromSource),
+           Commands.waitSeconds(0.2).unless(() -> fromSource),
 
            Command_FeederTakeNote(true)
         )
@@ -351,6 +354,19 @@ public class IntakeSubsystem extends SubsystemBase
             StopMotors();
             IsFeedingNote = false;
         });
+    }
+
+    public Command Command_ConditionalStowAuto()
+    {
+        return runOnce(() ->
+       {
+           System.out.println("Auto Stow: " + HasGottenNote);
+         if (!HasGottenNote)
+         {
+             StopMotors();
+             PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations));
+         }
+       });
     }
 
     public Command Command_MoveNote(boolean forward)

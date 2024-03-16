@@ -10,13 +10,16 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
@@ -34,12 +37,13 @@ import friarLib2.math.LookupTable;
 public class RobotContainer
 {
     static public final PowerDistribution PDH = new PowerDistribution();
-
     // --------------------------------------------------------------------------------------------
     // -- Controllers
     // --------------------------------------------------------------------------------------------
     public static CommandXboxController Driver = new CommandXboxController(0);
     public static CommandXboxController Operator = new CommandXboxController(1);
+
+    static private final DigitalInput ArmReset = new DigitalInput(9);
 
 
 
@@ -103,6 +107,11 @@ public class RobotContainer
         SmartDashboard.putData("Auto Chooser", autoChooser);
         autoChooser.addOption("None", Commands.none());
         autoChooser.addOption("SimpleForward", Commands.run(() -> driveFieldCentric.withVelocityX(1)).withTimeout(2));
+        autoChooser.addOption("Score Preload", Commands.sequence(
+            Pose.Command_GoToPose(PoseManager.EPose.Speaker),
+            Commands.waitSeconds(0.5),
+            Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker),
+            Pose.Command_GoToPose(PoseManager.EPose.Stowed)));
 
         SetDefaultCommands();
         
@@ -196,6 +205,7 @@ public class RobotContainer
         NamedCommands.registerCommand("Arm Stow", Pose.Command_GoToPose(PoseManager.EPose.Stowed));
         NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence(false));
         NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
+        NamedCommands.registerCommand("Condition Stop Intake", Intake.Command_ConditionalStowAuto());
         NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker).withTimeout(0.5).andThen(Intake.Command_StopIntake()));
     }
     
@@ -210,7 +220,21 @@ public class RobotContainer
     {
         drivetrain.setDefaultCommand(drivetrain.applyRequest(this::GetDefaultDriveRequest)
             .ignoringDisable(true));
+
+        var resetTrigger = new Trigger(() -> !ArmReset.get());
+        resetTrigger.onTrue(
+            Commands.sequence(
+                Intake.Command_ZeroPivotEncoder(),
+                Arm.Command_ZeroArmEncoder(),
+                drivetrain.runOnce(drivetrain::seedFieldRelative),
+                Commands.runOnce(() -> LimelightHelpers.setLEDMode_ForceBlink("")),
+                Commands.waitSeconds(0.5),
+                Commands.runOnce(() -> LimelightHelpers.setLEDMode_ForceOff(""))
+            )
+            .unless(() -> DriverStation.isEnabled())
+            .ignoringDisable(true));
     }
+
 
     // --------------------------------------------------------------------------------------------
     // -- Driver

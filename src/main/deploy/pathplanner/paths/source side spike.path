@@ -55,7 +55,7 @@
     {
       "name": "New Constraints Zone",
       "minWaypointRelativePos": 0.55,
-      "maxWaypointRelativePos": 1.35,
+      "maxWaypointRelativePos": 1.6,
       "constraints": {
         "maxVelocity": 1.0,
         "maxAcceleration": 0.5,
@@ -76,6 +76,29 @@
               "type": "named",
               "data": {
                 "name": "Intake Note"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "backup stow",
+      "waypointRelativePos": 1.65,
+      "command": {
+        "type": "sequential",
+        "data": {
+          "commands": [
+            {
+              "type": "named",
+              "data": {
+                "name": "stop Intake motors"
+              }
+            },
+            {
+              "type": "named",
+              "data": {
+                "name": "Arm Stow"
               }
             }
           ]

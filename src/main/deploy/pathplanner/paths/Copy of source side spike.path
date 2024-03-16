@@ -48,12 +48,12 @@
     },
     {
       "anchor": {
-        "x": 0.85,
-        "y": 4.5
+        "x": 0.7050561319382253,
+        "y": 4.74288880104151
       },
       "prevControl": {
-        "x": 2.4382599407138885,
-        "y": 1.7214929722298802
+        "x": 2.2933160726521136,
+        "y": 1.9643817732713904
       },
       "nextControl": null,
       "isLocked": false,
@@ -109,7 +109,7 @@
       "minWaypointRelativePos": 0,
       "maxWaypointRelativePos": 0.15000000000000002,
       "constraints": {
-        "maxVelocity": 0.2,
+        "maxVelocity": 0.75,
         "maxAcceleration": 3.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0
@@ -119,7 +119,7 @@
   "eventMarkers": [
     {
       "name": "New Event Marker",
-      "waypointRelativePos": 1.4,
+      "waypointRelativePos": 0.85,
       "command": {
         "type": "sequential",
         "data": {
@@ -128,6 +128,23 @@
               "type": "named",
               "data": {
                 "name": "Intake Note"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "New Event Marker",
+      "waypointRelativePos": 2.4000000000000004,
+      "command": {
+        "type": "sequential",
+        "data": {
+          "commands": [
+            {
+              "type": "named",
+              "data": {
+                "name": " Condition Stop Intake"
               }
             }
           ]
