@@ -46,30 +46,6 @@
           "data": {
             "pathName": "Copy of source side spike"
           }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Arm Score"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.2
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Shoot Speaker"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Arm Stow"
-          }
         }
       ]
     }

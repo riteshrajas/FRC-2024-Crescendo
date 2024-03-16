@@ -70,11 +70,28 @@
               "data": {
                 "name": "Intake Note"
               }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "back up stow",
+      "waypointRelativePos": 1.65,
+      "command": {
+        "type": "sequential",
+        "data": {
+          "commands": [
+            {
+              "type": "named",
+              "data": {
+                "name": "stop Intake motors"
+              }
             },
             {
               "type": "named",
               "data": {
-                "name": "Arm Score"
+                "name": "Arm Stow"
               }
             }
           ]
