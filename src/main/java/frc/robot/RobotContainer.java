@@ -329,7 +329,7 @@ public class RobotContainer
 
 
         Operator.a().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Stowed));
-        Operator.b().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Intake));
+        Operator.b().onTrue(Intake.Command_UnstickPivot());
         Operator.x().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Amp));
         Operator.y().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Speaker));
 

@@ -31,7 +31,8 @@ public class IntakeSubsystem extends SubsystemBase
         Amp(0.075),
         Trap(PivotLimitReverse + PivotLimitReverseBuffer),
         Climb(-0.25),
-        Source(-0.237);
+        Source(-0.237),
+        Unstick(-0.166);
 
         private final double Rotations;
         EPivotPosition(double rotations) { Rotations = rotations; }
@@ -240,6 +241,14 @@ public class IntakeSubsystem extends SubsystemBase
     public Command Command_SetNeutralMode(NeutralModeValue mode)
     {
         return runOnce(() -> PivotMotor.setNeutralMode(mode)).ignoringDisable(true);
+    }
+
+    public Command Command_UnstickPivot()
+    {
+        return Commands.sequence(
+            Command_SetPivotPosition(EPivotPosition.Unstick),
+            Command_SetPivotPosition(EPivotPosition.Stowed)
+        );
     }
 
     public Command Command_IntakeNote(boolean fromSource)
