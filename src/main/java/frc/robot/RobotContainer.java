@@ -158,6 +158,46 @@ public class RobotContainer
 //
 //   }
 
+    private SwerveRequest GetAlignToTagRequest()
+    {
+        var target = Vision.GetBestTarget();
+        if (target == null)
+        {
+            return driveRobotCentric
+            .withVelocityX(0)
+            .withVelocityY(0)
+            .withRotationalRate(0);
+        }
+
+        double posY = target.getRobotPose_TargetSpace()
+                                .getTranslation()
+                                .getZ();
+
+        double posX = target.getRobotPose_TargetSpace()
+                             .getTranslation()
+                             .getX();
+
+        double angleY = target.getRobotPose_TargetSpace()
+                             .getRotation()
+                             .getY();
+
+        SmartDashboard.putNumber("Target.posX", posX);
+        SmartDashboard.putNumber("Target.posY", posY);
+        SmartDashboard.putNumber("Target.angleY", angleY);
+
+        return driveRobotCentric
+            .withVelocityX(-(posY + 1))
+            .withVelocityY(posX * 2)
+            .withRotationalRate(angleY * 7);
+    }
+
+    Command Command_AlignToTag()
+    {
+        return Commands.runOnce(() -> LimelightHelpers.setLEDMode_ForceOn(""))
+                .andThen(drivetrain.applyRequest(() -> GetAlignToTagRequest()))
+            .finallyDo(() -> LimelightHelpers.setLEDMode_ForceOff(""));
+    }
+
    Command Command_TestLineup()
    {
        return Commands.runEnd(
@@ -319,6 +359,13 @@ public class RobotContainer
                 Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp),
                 Pose.Command_GoToPose(PoseManager.EPose.Stowed))
         );
+
+        Driver.rightBumper().whileTrue(Command_AlignToTag());
+        Driver.rightTrigger().onFalse(Commands.sequence(
+            Command_AutoPose(),
+            Commands.waitSeconds(1),
+            Pose.Command_GoToPose(PoseManager.EPose.Stowed)
+            ));
     }
     
     
@@ -398,24 +445,24 @@ public class RobotContainer
 
     private double DefaultDriveRotationRate()
     {
-        if (Driver.getHID().getRightBumper()) //Dumb solution for note tracking but it works
-        {
-            if (LimelightHelpers.getCurrentPipelineIndex("") == 1)
-            {
-                var target = Vision.GetBestNoteTarget();
-                if (target != null)
-                {
-                    return target.tx * -0.1;
-                }
-            }
-            else {
-                var target = Vision.GetBestTarget();
-                if (target != null)
-                {
-                    return target.tx * -0.1;
-                }
-            }
-        }
+//        if (Driver.getHID().getRightBumper()) //Dumb solution for note tracking but it works
+//        {
+//            if (LimelightHelpers.getCurrentPipelineIndex("") == 1)
+//            {
+//                var target = Vision.GetBestNoteTarget();
+//                if (target != null)
+//                {
+//                    return target.tx * -0.1;
+//                }
+//            }
+//            else {
+//                var target = Vision.GetBestTarget();
+//                if (target != null)
+//                {
+//                    return target.tx * -0.1;
+//                }
+//            }
+//        }
 
         double magicScalar = 0.02; // The steering gains seem borked, but I ran out of time to figure out how to tune them correctly, so here's a magic number to get it to turn decently.
 
