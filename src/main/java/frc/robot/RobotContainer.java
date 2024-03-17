@@ -233,7 +233,11 @@ public class RobotContainer
     {
         NamedCommands.registerCommand("Arm Score", Pose.Command_GoToPose(PoseManager.EPose.Speaker));
         NamedCommands.registerCommand("Arm Stow", Pose.Command_GoToPose(PoseManager.EPose.Stowed));
-        NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence(false));
+        NamedCommands.registerCommand("Intake Note",
+            Command_IntakeNoteSequence(false)
+            .withTimeout(2.5)
+            .andThen(Pose.Command_GoToPose(PoseManager.EPose.Stowed))
+            .andThen(Intake.Command_StopIntake()));
         NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
         NamedCommands.registerCommand("Condition Stop Intake", Intake.Command_ConditionalStowAuto());
         NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker).withTimeout(0.5).andThen(Intake.Command_StopIntake()));
@@ -261,6 +265,7 @@ public class RobotContainer
                 Intake.Command_ZeroPivotEncoder(),
                 Arm.Command_ZeroArmEncoder(),
                 drivetrain.runOnce(drivetrain::seedFieldRelative),
+                Commands.print("Zeroed!"),
                 Commands.runOnce(() -> LimelightHelpers.setLEDMode_ForceBlink("")),
                 Commands.waitSeconds(0.5),
                 Commands.runOnce(() -> LimelightHelpers.setLEDMode_ForceOff(""))
