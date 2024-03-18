@@ -101,10 +101,14 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     private final SendableChooser<Command> autoChooser;
 
+    
+    
     // --------------------------------------------------------------------------------------------
     // -- State
     // --------------------------------------------------------------------------------------------
     private boolean RotationModeIsRobotCentric = false;
+    
+    
 
     public RobotContainer()
     {
@@ -131,105 +135,15 @@ public class RobotContainer
 
         drivetrain.registerTelemetry(logger::telemeterize);
    }
-
-//   Command Command_AutoLineupSequence()
-//   {
-//
-//       var target = Vision.GetBestTarget();
-//
-//       double tX = 0.0;
-//       double tY = 0.0;
-//       Rotation2d yaw = new Rotation2d(tX, tY);
-//
-//       float distance = 0; // wanted dist
-//
-//       if (target != null)
-//       {
-//           if (distance != Vision.LastDist)
-//           {
-//               while (target.tx != tX)
-//               {
-//                   return drivetrain.applyRequest(() -> driveFieldCentric.withRotationalRate(-target.tx));
-//               }
-//           }
-//
-//       }
-//
-//       return drivetrain.applyRequest(() -> driveFieldCentric);
-//
-//   }
-
-    private SwerveRequest GetAlignToTagRequest()
-    {
-        var target = Vision.GetBestTarget();
-        if (target == null)
-        {
-            return driveRobotCentric
-            .withVelocityX(0)
-            .withVelocityY(0)
-            .withRotationalRate(0);
-        }
-
-        Pose3d pose = target.getRobotPose_TargetSpace();
-        double posY = pose.getTranslation().getZ();
-        double posX = pose.getTranslation().getX();
-        double angleY = pose.getRotation().getY();
-
-        SmartDashboard.putNumber("Target.posX", posX);
-        SmartDashboard.putNumber("Target.posY", posY);
-        SmartDashboard.putNumber("Target.angleY", angleY);
-
-        return driveRobotCentric
-            .withVelocityX(-(posY + 1))
-            .withVelocityY(posX * 2)
-            .withRotationalRate(angleY * 7);
-    }
-
+   
     Command Command_AlignToTag()
     {
-        return Commands.runOnce(() -> LimelightHelpers.setLEDMode_ForceOn(""))
-                .andThen(drivetrain.applyRequest(() -> GetAlignToTagRequest()))
-            .finallyDo(() -> LimelightHelpers.setLEDMode_ForceOff(""));
+        return Commands.startEnd(
+                   () -> LimelightHelpers.setLEDMode_ForceOn(""),
+                   () -> LimelightHelpers.setLEDMode_ForceOff(""))
+               .alongWith(drivetrain.applyRequest(this::GetAlignToTagRequest));
     }
-
-   Command Command_TestLineup()
-   {
-       return Commands.runEnd(
-           () ->
-           {
-               double deltaX;
-               double deltaY;
-               double deltaT;
-
-               var target = Vision.GetBestTarget();
-               if (target == null) { return;}
-
-               var pose = LimelightHelpers.getBotPose2d("");
-
-               if (CurrentAlliance == DefaultAlliance)
-               {
-                   deltaX = pose.getX() - -6.45;
-               } else {
-                   deltaX = pose.getX() - 6.45;
-               }
-               deltaY = pose.getY() - 0;
-               deltaT = pose.getRotation()
-                            .getDegrees() - 90;
-
-               SmartDashboard.putNumber("AutoLineup.DeltaX", deltaX);
-               SmartDashboard.putNumber("AutoLineup.DeltaY", deltaY);
-               SmartDashboard.putNumber("AutoLineup.DeltaT", deltaT);
-
-               drivetrain.applyRequest(() -> driveFieldCentric
-                   .withVelocityX(deltaX)
-                   //.withVelocityY(deltaY)
-                   .withRotationalRate(deltaT));
-           },
-           () -> drivetrain.applyRequest(() -> brake), drivetrain
-       );
-
-   }
-
+    
    public Command Command_RumbleControllers()
    {
        return Commands.runOnce(() ->
@@ -286,10 +200,7 @@ public class RobotContainer
     
     private void SetDefaultCommands()
     {
-        drivetrain.setDefaultCommand(drivetrain.applyRequest(this::GetDefaultDriveRequest)
-            .ignoringDisable(true));
-
-
+        drivetrain.setDefaultCommand(drivetrain.applyRequest(this::GetDefaultDriveRequest).ignoringDisable(true));
     }
 
     private void ConfigureMiscBindings()
@@ -329,7 +240,6 @@ public class RobotContainer
         //Driver.b().whileTrue(drivetrain.applyRequest(() -> point.withModuleDirection(new Rotation2d(-Driver.getLeftY(), -Driver.getLeftX()))));
 
         Driver.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldRelative).ignoringDisable(true));
-        Driver.a().whileTrue(Command_TestLineup());
 
         // -- Intake
         Driver.rightTrigger().onTrue(Command_IntakeNoteSequence(false));
@@ -338,6 +248,11 @@ public class RobotContainer
                 Commands.waitSeconds(0.5),
                 Commands.runOnce(() -> Intake.RequestCancelIntake()))
         );
+        Driver.rightTrigger().onFalse(Commands.sequence(
+            Command_AutoPose(),
+            Commands.waitSeconds(1),
+            Pose.Command_GoToPose(PoseManager.EPose.Stowed)
+        ));
 
         // -- Outtake speaker
         Driver.leftTrigger().onTrue(
@@ -354,12 +269,8 @@ public class RobotContainer
                 Pose.Command_GoToPose(PoseManager.EPose.Stowed))
         );
 
+        // -- Align
         Driver.rightBumper().whileTrue(Command_AlignToTag());
-        Driver.rightTrigger().onFalse(Commands.sequence(
-            Command_AutoPose(),
-            Commands.waitSeconds(1),
-            Pose.Command_GoToPose(PoseManager.EPose.Stowed)
-            ));
     }
     
     
@@ -406,64 +317,57 @@ public class RobotContainer
             return driveFieldCentric
                 .withVelocityX(0)
                 .withVelocityY(0)
-                .withRotationalRate(DefaultDriveRotationRate());
+                .withRotationalRate(GetDefaultDriveRotationRate());
         }
 
         double finalX = x * deflectionLut * TunerConstants.kSpeedAt12VoltsMps;
         double finalY = y * deflectionLut * TunerConstants.kSpeedAt12VoltsMps;
-
-//        SmartDashboard.putNumber("XRaw", x);
-//        SmartDashboard.putNumber("YRaw", y);
-//
-//        SmartDashboard.putNumber("Deflection", deflection);
-//        SmartDashboard.putNumber("Deflectionlut", deflectionLut);
-//
-//        SmartDashboard.putNumber("Xfinal", finalX);
-//        SmartDashboard.putNumber("Yfinal", finalY);
 
         if (RotationModeIsRobotCentric)
         {
             return driveRobotCentric
                 .withVelocityX(-finalX)
                 .withVelocityY(-finalY)
-                .withRotationalRate(DefaultDriveRotationRate());
+                .withRotationalRate(GetDefaultDriveRotationRate());
         }
         else
         {
             return driveFieldCentric
                 .withVelocityX(-finalX)
                 .withVelocityY(-finalY)
-                .withRotationalRate(DefaultDriveRotationRate());
+                .withRotationalRate(GetDefaultDriveRotationRate());
         }
     }
 
-    private double DefaultDriveRotationRate()
+    private double GetDefaultDriveRotationRate()
     {
-//        if (Driver.getHID().getRightBumper()) //Dumb solution for note tracking but it works
-//        {
-//            if (LimelightHelpers.getCurrentPipelineIndex("") == 1)
-//            {
-//                var target = Vision.GetBestNoteTarget();
-//                if (target != null)
-//                {
-//                    return target.tx * -0.1;
-//                }
-//            }
-//            else {
-//                var target = Vision.GetBestTarget();
-//                if (target != null)
-//                {
-//                    return target.tx * -0.1;
-//                }
-//            }
-//        }
-
         double magicScalar = 0.02; // The steering gains seem borked, but I ran out of time to figure out how to tune them correctly, so here's a magic number to get it to turn decently.
 
         double finalAngVelocity = -TurnLut.GetValue(Driver.getRightX()) * MaxRotationsPerSecond * 360;
-        // SmartDashboard.putNumber("FinalAngVel", Math.toRadians(finalAngVelocity));
         return finalAngVelocity * magicScalar;
     }
 
+    private SwerveRequest GetAlignToTagRequest()
+    {
+        var target = Vision.GetBestTarget();
+        if (target == null)
+        {
+            return GetDefaultDriveRequest();
+        }
 
+        Pose3d pose = target.getRobotPose_TargetSpace();
+        double posY = pose.getTranslation().getZ();
+        double posX = pose.getTranslation().getX();
+        double angleY = pose.getRotation().getY();
+
+        SmartDashboard.putNumber("Target.posX", posX);
+        SmartDashboard.putNumber("Target.posY", posY);
+        SmartDashboard.putNumber("Target.angleY", angleY);
+
+        return driveRobotCentric
+            .withVelocityX(-(posY + 1))
+            .withVelocityY(posX * 2)
+            .withRotationalRate(angleY * 7);
+    }
+    
 }

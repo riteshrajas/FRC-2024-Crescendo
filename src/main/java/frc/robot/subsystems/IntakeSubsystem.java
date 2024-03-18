@@ -356,14 +356,13 @@ public class IntakeSubsystem extends SubsystemBase
 
     public Command Command_ConditionalStowAuto()
     {
-        return runOnce(() ->
-       {
+        return runOnce(() -> {
            System.out.println("Auto Stow: " + HasGottenNote);
-         if (!HasGottenNote)
-         {
-             StopMotors();
-             PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations));
-         }
+           if (!HasGottenNote)
+           {
+               StopMotors();
+               PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations));
+           }
        });
     }
 
@@ -373,7 +372,6 @@ public class IntakeSubsystem extends SubsystemBase
             () -> {
                 IntakeMotor.setControl(IntakeRequest.withOutput(forward ? -0.25: 0.25));
                 FeederMotor.set(forward ? 0.15: -0.15);
-
             },
             () -> StopMotors()
         );
