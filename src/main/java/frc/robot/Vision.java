@@ -51,9 +51,6 @@ public class Vision
                 if (bestTarget == null || Math.abs(target.tx) < Math.abs(bestTarget.tx))
                 {
                     bestTarget = target;
-
-                    SmartDashboard.putNumber("Vision.BestTargetID", bestTarget.fiducialID);
-                    SmartDashboard.putNumber("Vision.BestTargetTx", bestTarget.tx);
                 }
             }
         }

@@ -10,6 +10,7 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
@@ -169,17 +170,10 @@ public class RobotContainer
             .withRotationalRate(0);
         }
 
-        double posY = target.getRobotPose_TargetSpace()
-                                .getTranslation()
-                                .getZ();
-
-        double posX = target.getRobotPose_TargetSpace()
-                             .getTranslation()
-                             .getX();
-
-        double angleY = target.getRobotPose_TargetSpace()
-                             .getRotation()
-                             .getY();
+        Pose3d pose = target.getRobotPose_TargetSpace();
+        double posY = pose.getTranslation().getZ();
+        double posX = pose.getTranslation().getX();
+        double angleY = pose.getRotation().getY();
 
         SmartDashboard.putNumber("Target.posX", posX);
         SmartDashboard.putNumber("Target.posY", posY);
