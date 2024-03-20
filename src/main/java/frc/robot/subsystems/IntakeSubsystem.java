@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.Constants;
 
 import com.ctre.phoenix6.configs.*;
+import frc.robot.LimelightHelpers;
 import frc.robot.RobotContainer;
 //*TODO: Find acutal poses, work out motor configurations, do commmands  and logic for moving pivot
 
@@ -29,13 +30,12 @@ public class IntakeSubsystem extends SubsystemBase
         Shoot_speaker(PivotLimitReverse),
         Amp(0.075),
         Trap(PivotLimitReverse + PivotLimitReverseBuffer),
-        Climb(-0.25);
+        Climb(-0.25),
+        Source(-0.237),
+        Unstick(-0.166);
 
         private final double Rotations;
-
-        EPivotPosition(double rotations) {
-            Rotations = rotations;
-        }
+        EPivotPosition(double rotations) { Rotations = rotations; }
     }
 
     public enum EOutakeType
@@ -46,10 +46,19 @@ public class IntakeSubsystem extends SubsystemBase
         trap(0);
 
         private final double DutyCycle;
+        EOutakeType(double dutyCycle) { DutyCycle = dutyCycle; }
+    }
 
-        EOutakeType(double dutyCycle) {
-            DutyCycle = dutyCycle;
-        }
+    enum EFeedType
+    {
+        Intake_FromGround(0.6),
+        Intake_FromSource(0.4),
+        Intake_ToFeeder(0.3),
+        Feeder_TakeNote(-0.075),
+        Feeder_GiveNote(0.5);
+
+        private final double DutyCycle;
+        EFeedType(double dutyCycle) { DutyCycle = dutyCycle; }
     }
 
     private final double PivotTolerance = 15.0 / 360.0;
@@ -58,7 +67,6 @@ public class IntakeSubsystem extends SubsystemBase
 
     // Since we zero on the hard stop, add this buffer to when going home so we don't slam into the stop.
     static private final double PivotLimitReverseBuffer = 0.02;
-    private final double TEMP_IntakeDutyCycle = 0.4;
 
 
     // -- Motors
@@ -78,6 +86,10 @@ public class IntakeSubsystem extends SubsystemBase
 
     double lastCurrent = 0;
     int currentSpikeCount = 0;
+    boolean IsFeedingNote = false;
+    boolean HasGottenNote = false;
+
+    public boolean GetIsFeedingNote() { return IsFeedingNote; }
 
     public IntakeSubsystem()
     {
@@ -190,6 +202,23 @@ public class IntakeSubsystem extends SubsystemBase
         FeederMotor.stopMotor();
     }
 
+    // TODO: Test this change - it should fix the interrupt on let go. If it does, move the rumble
+    public void RequestCancelIntake()
+    {
+        if (IsFeedingNote) { return; }
+
+        CommandScheduler.getInstance().schedule(
+            Commands.sequence(
+                Command_StopIntake(),
+                Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed))
+        );
+    }
+
+    private void StopMotors()
+    {
+        IntakeMotor.stopMotor();
+        FeederMotor.stopMotor();
+    }
 
     public double GetPivotPos() {
         return PivotMotor.getPosition().getValue();
@@ -209,132 +238,161 @@ public class IntakeSubsystem extends SubsystemBase
         });
     }
 
-    public Command Command_SetCoastMode(NeutralModeValue mode)
+    public Command Command_SetNeutralMode(NeutralModeValue mode)
     {
         return runOnce(() -> PivotMotor.setNeutralMode(mode)).ignoringDisable(true);
     }
 
-    public Command Command_PreIntakeSpinUp() {
-        // TODO: This should be a startEnd command that stops the motor when it finishes in case the command gets interrupted,
-        //       but we can't do that right now due to how the intake and arm subsystems are divided up. Until then we'll just
-        //       spin up the wheels and rely on the invoking command sequence to stop the intake.
-        return runOnce(() ->
-        {
-            IntakeMotor.setControl(IntakeRequest.withOutput(TEMP_IntakeDutyCycle));
-            //IntakeMotor.setControl(IntakeRequest.withVelocity(35));
+    public Command Command_UnstickPivot()
+    {
+        return Commands.sequence(
+            Command_SetPivotPosition(EPivotPosition.Unstick),
+            Command_SetPivotPosition(EPivotPosition.Stowed)
+        );
+    }
+
+    public Command Command_IntakeNote(boolean fromSource)
+    {
+        return Commands.sequence(
+           Commands.print("Intake note starting"),
+
+           runOnce(() -> {
+                IsFeedingNote = false;
+                IntakeMotor.setControl(IntakeRequest.withOutput(fromSource ? EFeedType.Intake_FromSource.DutyCycle :  EFeedType.Intake_FromGround.DutyCycle));
+            }),
+
+           Command_SetPivotPosition(fromSource ? EPivotPosition.Source : EPivotPosition.Intake),
+
+           Commands.waitSeconds(0.25),
+
+           Commands.print(fromSource ? "at source, looking for note" : "On ground, looking for note"),
+
+           runOnce(() -> {
+               currentSpikeCount = 0;
+               lastCurrent = IntakeMotor.getStatorCurrent().getValue();
+               if (fromSource)
+               {
+                   LimelightHelpers.setLEDMode_ForceBlink("");
+               }
+            }),
+
+           Commands.waitUntil(() -> {
+                double curCurrent = IntakeMotor.getStatorCurrent().getValue();
+
+                SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
+
+                if (curCurrent - lastCurrent > 15)
+                {
+                    currentSpikeCount++;
+                }
+
+                lastCurrent = curCurrent;
+                if (currentSpikeCount >= 1)
+                {
+                    IsFeedingNote = true;
+                    HasGottenNote = true;
+                    LimelightHelpers.setLEDMode_ForceOff("");
+                    return true;
+                }
+                return false;
+            }),
+
+           RobotContainer.Get().Command_RumbleControllers(),
+
+           Commands.print("Note got - stowing"),
+           runOnce(() -> PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations))),
+
+           Commands.print("slowing down intake, spinning up feeder"),
+           runOnce(() -> IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_ToFeeder.DutyCycle))),
+           runOnce(() -> FeederMotor.set(EFeedType.Feeder_TakeNote.DutyCycle)),
+
+           Commands.waitSeconds(0.1).unless(() -> fromSource),
+
+           Command_FeederTakeNote(true)
+        )
+        .finallyDo(() -> {
+            if (!IsFeedingNote)
+            {
+                StopMotors();
+                LimelightHelpers.setLEDMode_ForceOff("");
+            }
         });
     }
 
-    public Command Command_IntakeNote()
+    public Command Command_FeederTakeNote(boolean skipWaitForSpinUp)
     {
-        return startEnd(
-            () -> {
+        return Commands.sequence(
+            runOnce(() -> FeederMotor.set(EFeedType.Feeder_TakeNote.DutyCycle)),
+
+            Commands.waitSeconds(0.25).unless(() -> skipWaitForSpinUp),
+
+            runOnce(() -> {
                 currentSpikeCount = 0;
-                lastCurrent = IntakeMotor.getStatorCurrent().getValue();
-                IntakeMotor.setControl(IntakeRequest.withOutput(TEMP_IntakeDutyCycle));
-            },
-            () -> {
-                IntakeMotor.stopMotor();
-                PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations));
-            }
-        )
-        .until(() ->
-        {
-            double curCurrent = IntakeMotor.getStatorCurrent().getValue();
-            SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
+                lastCurrent = FeederMotor.getOutputCurrent();
+                IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_ToFeeder.DutyCycle));
+            }),
 
-            if (curCurrent - lastCurrent > 25)
-            {
-                currentSpikeCount++;
-            }
+            Commands.waitUntil(() -> {
+                double curCurrent = FeederMotor.getOutputCurrent();
+                SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
 
-            lastCurrent = curCurrent;
+                if (curCurrent - lastCurrent > 5)
+                {
+                    currentSpikeCount++;
+                }
+                lastCurrent = curCurrent;
 
-            if (currentSpikeCount >= 1)
-            {
-                CommandScheduler.getInstance().schedule(
-                    Commands.startEnd(
-                        () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1),
-                        () -> RobotContainer.Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0)
-                    ).withTimeout(0.5));
-                return true;
-            }
-            return false;
-        })
-        .andThen(Command_FeederTakeNote());
+                return currentSpikeCount >= 1;
+            })
+            .withTimeout(1),
+
+            Commands.waitSeconds(0.25)
+
+        ).finallyDo(() -> {
+            StopMotors();
+            IsFeedingNote = false;
+        });
     }
 
-    public Command Command_FeederTakeNote()
+    public Command Command_ConditionalStowAuto()
     {
-        var feederMotorIntakeSpeed = -0.075;
-
-       return Commands.sequence(
-           run(() -> {
-               FeederMotorPID.setReference(feederMotorIntakeSpeed, CANSparkBase.ControlType.kDutyCycle);
-               IntakeMotor.setControl(IntakeRequest.withOutput(3));
-           }).withTimeout(0.2),
-           startEnd(
-               () -> {
-                   currentSpikeCount = 0;
-                   lastCurrent = FeederMotor.getOutputCurrent();
-                   FeederMotorPID.setReference(feederMotorIntakeSpeed, CANSparkBase.ControlType.kDutyCycle);
-               },
-               () -> {
-                   FeederMotor.stopMotor();
-                   IntakeMotor.stopMotor();
-               }
-           )
-           .until(() -> {
-               double curCurrent = FeederMotor.getOutputCurrent();
-               SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
-               if (curCurrent - lastCurrent > 5) {
-                   currentSpikeCount++;
-               }
-               return currentSpikeCount >= 1;
-           }),
-           startEnd(
-               () -> FeederMotorPID.setReference(feederMotorIntakeSpeed, CANSparkBase.ControlType.kDutyCycle),
-               () -> FeederMotor.stopMotor())
-               .withTimeout(0.15)
-        );
+        return runOnce(() -> {
+           System.out.println("Auto Stow: " + HasGottenNote);
+           if (!HasGottenNote)
+           {
+               StopMotors();
+               PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations));
+           }
+       });
     }
 
     public Command Command_MoveNote(boolean forward)
     {
-        var dutyCycle = forward ? -0.5: 0.5;
-
         return startEnd(
             () -> {
-                //FeederMotorPID.setReference(velocity * 60, CANSparkBase.ControlType.kVelocity);
-                IntakeMotor.setControl(IntakeRequest.withOutput(dutyCycle));
+                IntakeMotor.setControl(IntakeRequest.withOutput(forward ? -0.25: 0.25));
                 FeederMotor.set(forward ? 0.15: -0.15);
-
             },
-            () -> {
-                IntakeMotor.stopMotor();
-                FeederMotor.stopMotor();
-            }
+            () -> StopMotors()
         );
     }
+
 
     public Command Command_Outtake(EOutakeType outtakeType)
     {
         return Commands.sequence(
-           run(() -> IntakeMotor.setControl(IntakeRequest.withOutput(outtakeType.DutyCycle)))
-               .withTimeout(0.25),
-           run(() -> FeederMotor.set(0.5))
-               .withTimeout(0.25)
+            runOnce(() -> IntakeMotor.setControl(IntakeRequest.withOutput(outtakeType.DutyCycle))),
+            Commands.waitSeconds(0.25),
+            runOnce(() -> FeederMotor.set(0.5)),
+            Commands.waitSeconds(0.5),
+            Command_StopIntake()
         );
     }
 
 
     public Command Command_StopIntake() //use this in auto just in case we miss a note
     {
-        return runOnce(() ->
-        {
-            IntakeMotor.stopMotor();
-            FeederMotor.stopMotor();
-        });
+        return runOnce(() -> StopMotors());
     }
 
 

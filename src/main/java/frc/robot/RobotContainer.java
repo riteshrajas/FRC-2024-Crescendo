@@ -10,13 +10,18 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
@@ -25,22 +30,24 @@ import friarLib2.math.LookupTable;
 
 
 
-/**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and trigger mappings) should be declared here.
- */
 public class RobotContainer
 {
+    static private RobotContainer _This;
+    static public RobotContainer Get() { return _This; }
     static public final PowerDistribution PDH = new PowerDistribution();
 
     // --------------------------------------------------------------------------------------------
     // -- Controllers
     // --------------------------------------------------------------------------------------------
-    public static CommandXboxController Driver = new CommandXboxController(0);
-    public static CommandXboxController Operator = new CommandXboxController(1);
+    static public CommandXboxController Driver = new CommandXboxController(0);
+    static public CommandXboxController Operator = new CommandXboxController(1);
 
+
+    // --------------------------------------------------------------------------------------------
+    // -- Misc Input
+    // --------------------------------------------------------------------------------------------
+    static private final DigitalInput DIO_Zero = new DigitalInput(9);
+    static private final Trigger Trigger_Zero = new Trigger(() -> DIO_Zero.get());
 
 
     // --------------------------------------------------------------------------------------------
@@ -59,11 +66,14 @@ public class RobotContainer
 
     private DriverStation.Alliance DefaultAlliance = DriverStation.Alliance.Blue;
 
-    private DriverStation.Alliance CurrentAlliance = DriverStation.getAlliance()
-                                                                  .get();
+    private DriverStation.Alliance CurrentAlliance = DriverStation.getAlliance().get();
+
+
+
+
 
     // --------------------------------------------------------------------------------------------
-    // -- Subsystems~
+    // -- Subsystems
     // --------------------------------------------------------------------------------------------
     public final SwerveSubsystem drivetrain = TunerConstants.DriveTrain;
     public final ArmSubsystem Arm = new ArmSubsystem();
@@ -91,99 +101,75 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     private final SendableChooser<Command> autoChooser;
 
+    
+    
     // --------------------------------------------------------------------------------------------
     // -- State
     // --------------------------------------------------------------------------------------------
     private boolean RotationModeIsRobotCentric = false;
+    
+    
 
     public RobotContainer()
     {
+        _This = this;
+
+
+
         ConfigureAutoCommands();
         autoChooser = AutoBuilder.buildAutoChooser();
         SmartDashboard.putData("Auto Chooser", autoChooser);
         autoChooser.addOption("None", Commands.none());
         autoChooser.addOption("SimpleForward", Commands.run(() -> driveFieldCentric.withVelocityX(1)).withTimeout(2));
+        autoChooser.addOption("Score Preload", Commands.sequence(
+            Pose.Command_GoToPose(PoseManager.EPose.Speaker),
+            Commands.waitSeconds(0.5),
+            Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker),
+            Pose.Command_GoToPose(PoseManager.EPose.Stowed)));
 
         SetDefaultCommands();
-        
+
+        ConfigureMiscBindings();
         ConfigureDriverBindings();
         ConfigureOperatorBindings();
 
         drivetrain.registerTelemetry(logger::telemeterize);
    }
-
-//   Command Command_AutoLineupSequence()
-//   {
-//
-//       var target = Vision.GetBestTarget();
-//
-//       double tX = 0.0;
-//       double tY = 0.0;
-//       Rotation2d yaw = new Rotation2d(tX, tY);
-//
-//       float distance = 0; // wanted dist
-//
-//       if (target != null)
-//       {
-//           if (distance != Vision.LastDist)
-//           {
-//               while (target.tx != tX)
-//               {
-//                   return drivetrain.applyRequest(() -> driveFieldCentric.withRotationalRate(-target.tx));
-//               }
-//           }
-//
-//       }
-//
-//       return drivetrain.applyRequest(() -> driveFieldCentric);
-//
-//   }
-
-   Command Command_TestLineup()
+   
+    Command Command_AlignToTag()
+    {
+        return Commands.startEnd(
+                   () -> LimelightHelpers.setLEDMode_ForceOn(""),
+                   () -> LimelightHelpers.setLEDMode_ForceOff(""))
+               .alongWith(drivetrain.applyRequest(this::GetAlignToTagRequest));
+    }
+    
+   public Command Command_RumbleControllers()
    {
-       return Commands.runEnd(
-           () ->
-           {
-               double deltaX;
-               double deltaY;
-               double deltaT;
-
-               var target = Vision.GetBestTarget();
-               if (target == null) { return;}
-
-               var pose = LimelightHelpers.getBotPose2d("");
-
-               if (CurrentAlliance == DefaultAlliance)
-               {
-                   deltaX = pose.getX() - -6.45;
-               } else {
-                   deltaX = pose.getX() - 6.45;
-               }
-               deltaY = pose.getY() - 0;
-               deltaT = pose.getRotation()
-                            .getDegrees() - 90;
-
-               SmartDashboard.putNumber("AutoLineup.DeltaX", deltaX);
-               SmartDashboard.putNumber("AutoLineup.DeltaY", deltaY);
-               SmartDashboard.putNumber("AutoLineup.DeltaT", deltaT);
-
-               drivetrain.applyRequest(() -> driveFieldCentric
-                   .withVelocityX(deltaX)
-                   //.withVelocityY(deltaY)
-                   .withRotationalRate(deltaT));
-           },
-           () -> drivetrain.applyRequest(() -> brake), drivetrain
+       return Commands.runOnce(() ->
+           CommandScheduler.getInstance().schedule(
+               Commands.sequence(
+                   Commands.waitSeconds(0.5),
+                   Commands.runOnce(() -> {
+                       Operator.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
+                       Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1);
+                   }),
+                   Commands.waitSeconds(0.5),
+                   Commands.runOnce(() -> {
+                       Operator.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
+                       Driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0);
+                   })
+               )
+           )
        );
-
    }
 
-   Command Command_IntakeNoteSequence()
+   Command Command_IntakeNoteSequence(boolean fromSource)
     {
-        return Arm.Command_SetPosition(ArmSubsystem.EArmPosition.Stowed)
-        .andThen(Intake.Command_PreIntakeSpinUp())
-        .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Intake))
-        .andThen(Intake.Command_PreIntakeSpinUp().alongWith(Commands.waitSeconds(0.25)))
-        .andThen(Intake.Command_IntakeNote());
+        return Commands.sequence(
+            Arm.Command_SetPosition(fromSource ? ArmSubsystem.EArmPosition.Source : ArmSubsystem.EArmPosition.Stowed),
+            Intake.Command_IntakeNote(fromSource)
+        );
     }
 
     public Command Command_AutoPose()
@@ -195,8 +181,13 @@ public class RobotContainer
     {
         NamedCommands.registerCommand("Arm Score", Pose.Command_GoToPose(PoseManager.EPose.Speaker));
         NamedCommands.registerCommand("Arm Stow", Pose.Command_GoToPose(PoseManager.EPose.Stowed));
-        NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence());
+        NamedCommands.registerCommand("Intake Note",
+            Command_IntakeNoteSequence(false)
+            .withTimeout(2.5)
+            .andThen(Pose.Command_GoToPose(PoseManager.EPose.Stowed))
+            .andThen(Intake.Command_StopIntake()));
         NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
+        NamedCommands.registerCommand("Condition Stop Intake", Intake.Command_ConditionalStowAuto());
         NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker).withTimeout(0.5).andThen(Intake.Command_StopIntake()));
     }
     
@@ -209,7 +200,22 @@ public class RobotContainer
     
     private void SetDefaultCommands()
     {
-        drivetrain.setDefaultCommand(drivetrain.applyRequest(this::GetDefaultDriveRequest)
+        drivetrain.setDefaultCommand(drivetrain.applyRequest(this::GetDefaultDriveRequest).ignoringDisable(true));
+    }
+
+    private void ConfigureMiscBindings()
+    {
+        Trigger_Zero.onTrue(
+            Commands.sequence(
+                Intake.Command_ZeroPivotEncoder(),
+                Arm.Command_ZeroArmEncoder(),
+                drivetrain.runOnce(drivetrain::seedFieldRelative),
+                Commands.print("Zeroed!"),
+                Commands.runOnce(() -> LimelightHelpers.setLEDMode_ForceBlink("")),
+                Commands.waitSeconds(0.5),
+                Commands.runOnce(() -> LimelightHelpers.setLEDMode_ForceOff(""))
+            )
+            .unless(() -> DriverStation.isEnabled())
             .ignoringDisable(true));
     }
 
@@ -234,20 +240,37 @@ public class RobotContainer
         //Driver.b().whileTrue(drivetrain.applyRequest(() -> point.withModuleDirection(new Rotation2d(-Driver.getLeftY(), -Driver.getLeftX()))));
 
         Driver.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldRelative).ignoringDisable(true));
-        Driver.a().whileTrue(Command_TestLineup());
 
-        Driver.rightTrigger()
-            .whileTrue(Command_IntakeNoteSequence())
-            .onFalse(Intake.Command_StopIntake() // Stop intake here is temporary until we can refactor the subsystems to make the intake motor separate from the pivot motor
-            .andThen(Intake.Command_SetPivotPosition(IntakeSubsystem.EPivotPosition.Stowed)));
+        // -- Intake
+        Driver.rightTrigger().onTrue(Command_IntakeNoteSequence(false));
+        Driver.rightTrigger().onFalse(
+            Commands.sequence(
+                Commands.waitSeconds(0.5),
+                Commands.runOnce(() -> Intake.RequestCancelIntake()))
+        );
+        Driver.rightTrigger().onFalse(Commands.sequence(
+            Command_AutoPose(),
+            Commands.waitSeconds(1),
+            Pose.Command_GoToPose(PoseManager.EPose.Stowed)
+        ));
 
+        // -- Outtake speaker
+        Driver.leftTrigger().onTrue(
+            Commands.sequence(
+                //Pose.Command_GoToPose(PoseManager.EPose.Speaker),
+                Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker),
+                Pose.Command_GoToPose(PoseManager.EPose.Stowed))
+        );
 
+        // -- Outtake Amp
+        Driver.leftBumper().onTrue(
+            Commands.sequence(
+                Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp),
+                Pose.Command_GoToPose(PoseManager.EPose.Stowed))
+        );
 
-        Driver.leftTrigger().whileTrue(Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker));
-        Driver.leftTrigger().onFalse(Intake.Command_StopIntake());
-        Driver.leftBumper().whileTrue(Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp));
-        Driver.leftBumper().onFalse(Intake.Command_StopIntake());
-//        Driver.x().onTrue(Commands.run(() -> RotationModeIsRobotCentric = !RotationModeIsRobotCentric));
+        // -- Align
+        Driver.rightBumper().whileTrue(Command_AlignToTag());
     }
     
     
@@ -260,27 +283,26 @@ public class RobotContainer
         Operator.start().onTrue(Arm.Command_ZeroArmEncoder().alongWith(Intake.Command_ZeroPivotEncoder().ignoringDisable(true)));
         Operator.back().whileTrue(Arm.Command_ManualArmControl());
 
-        //Operator.rightTrigger().onTrue(Intake.Command_Feed());
-        Operator.rightTrigger().onTrue(Intake.Command_FeederTakeNote());
 
 
         Operator.a().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Stowed));
-        Operator.b().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Intake));
+        Operator.b().onTrue(Intake.Command_UnstickPivot());
         Operator.x().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Amp));
         Operator.y().onTrue(Pose.Command_GoToPose(PoseManager.EPose.Speaker));
 
         Operator.povUp().onTrue(Pose.Command_GoToPose(PoseManager.EPose.PreClimb));
         Operator.povDown().onTrue(Arm.Command_Climb());
 
-        Operator.povLeft().onTrue(Arm.Command_SetCoastMode(NeutralModeValue.Brake).alongWith(Intake.Command_SetCoastMode(NeutralModeValue.Brake)));
-        Operator.povRight().onTrue(Arm.Command_SetCoastMode(NeutralModeValue.Coast).alongWith(Intake.Command_SetCoastMode(NeutralModeValue.Coast)));
+        Operator.povLeft().onTrue(Arm.Command_SetNeutralMode(NeutralModeValue.Brake).alongWith(Intake.Command_SetNeutralMode(NeutralModeValue.Brake)));
+        Operator.povRight().onTrue(Arm.Command_SetNeutralMode(NeutralModeValue.Coast).alongWith(Intake.Command_SetNeutralMode(NeutralModeValue.Coast)));
 
-        // Operator.rightBumper().onTrue(Pose.Command_AutoPose());
-        Operator.rightBumper().whileTrue(Intake.Command_MoveNote(true));
-        Operator.leftBumper().whileTrue(Intake.Command_MoveNote(false));
+        Operator.rightBumper().whileTrue(Intake.Command_MoveNote(false));
+        Operator.leftBumper().whileTrue(Intake.Command_MoveNote(true));
 
-        //Operator.rightTrigger().whileTrue(Command_AutoPose()); // Should now return pose for current tag
+        Operator.leftTrigger().onTrue(Intake.Command_FeederTakeNote(false));
 
+        Operator.rightTrigger().onTrue(Command_IntakeNoteSequence(true));
+        Operator.rightTrigger().onFalse(Pose.Command_GoToPose(PoseManager.EPose.Stowed).andThen(Commands.runOnce(() -> Intake.RequestCancelIntake())));
     }
 
     private SwerveRequest GetDefaultDriveRequest()
@@ -295,64 +317,57 @@ public class RobotContainer
             return driveFieldCentric
                 .withVelocityX(0)
                 .withVelocityY(0)
-                .withRotationalRate(DefaultDriveRotationRate());
+                .withRotationalRate(GetDefaultDriveRotationRate());
         }
 
         double finalX = x * deflectionLut * TunerConstants.kSpeedAt12VoltsMps;
         double finalY = y * deflectionLut * TunerConstants.kSpeedAt12VoltsMps;
-
-        SmartDashboard.putNumber("XRaw", x);
-        SmartDashboard.putNumber("YRaw", y);
-
-        SmartDashboard.putNumber("Deflection", deflection);
-        SmartDashboard.putNumber("Deflectionlut", deflectionLut);
-
-        SmartDashboard.putNumber("Xfinal", finalX);
-        SmartDashboard.putNumber("Yfinal", finalY);
 
         if (RotationModeIsRobotCentric)
         {
             return driveRobotCentric
                 .withVelocityX(-finalX)
                 .withVelocityY(-finalY)
-                .withRotationalRate(DefaultDriveRotationRate());
+                .withRotationalRate(GetDefaultDriveRotationRate());
         }
         else
         {
             return driveFieldCentric
                 .withVelocityX(-finalX)
                 .withVelocityY(-finalY)
-                .withRotationalRate(DefaultDriveRotationRate());
+                .withRotationalRate(GetDefaultDriveRotationRate());
         }
     }
 
-    private double DefaultDriveRotationRate()
+    private double GetDefaultDriveRotationRate()
     {
-        if (Driver.getHID().getRightBumper()) //Dumb solution for note tracking but it works
-        {
-            if (LimelightHelpers.getCurrentPipelineIndex("") == 1)
-            {
-                var target = Vision.GetBestNoteTarget();
-                if (target != null)
-                {
-                    return target.tx * -0.1;
-                }
-            }
-            else {
-                var target = Vision.GetBestTarget();
-                if (target != null)
-                {
-                    return target.tx * -0.1;
-                }
-            }
-        }
-
         double magicScalar = 0.02; // The steering gains seem borked, but I ran out of time to figure out how to tune them correctly, so here's a magic number to get it to turn decently.
 
         double finalAngVelocity = -TurnLut.GetValue(Driver.getRightX()) * MaxRotationsPerSecond * 360;
-        SmartDashboard.putNumber("FinalAngVel", Math.toRadians(finalAngVelocity));
         return finalAngVelocity * magicScalar;
     }
 
+    private SwerveRequest GetAlignToTagRequest()
+    {
+        var target = Vision.GetBestTarget();
+        if (target == null)
+        {
+            return GetDefaultDriveRequest();
+        }
 
+        Pose3d pose = target.getRobotPose_TargetSpace();
+        double posY = pose.getTranslation().getZ();
+        double posX = pose.getTranslation().getX();
+        double angleY = pose.getRotation().getY();
+
+        SmartDashboard.putNumber("Target.posX", posX);
+        SmartDashboard.putNumber("Target.posY", posY);
+        SmartDashboard.putNumber("Target.angleY", angleY);
+
+        return driveRobotCentric
+            .withVelocityX(-(posY + 1))
+            .withVelocityY(posX * 2)
+            .withRotationalRate(angleY * 7);
+    }
+    
 }

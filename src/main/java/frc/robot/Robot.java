@@ -4,17 +4,13 @@
 
 package frc.robot;
 
-import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.math.geometry.Pose2d;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.net.PortForwarder;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.subsystems.ArmSubsystem;
-import frc.robot.subsystems.IntakeSubsystem;
+import edu.wpi.first.wpilibj2.command.Commands;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -24,14 +20,17 @@ import frc.robot.subsystems.IntakeSubsystem;
  */
 public class Robot extends TimedRobot
 {
-    private Command m_autonomousCommand;
-    private RobotContainer m_robotContainer;
+    private Command AutonomousCommand;
+    private RobotContainer RobotContainer;
+
+
+
 
 
     @Override
     public void robotInit()
     {
-        m_robotContainer = new RobotContainer();
+        RobotContainer = new RobotContainer();
 
 
         for (int port = 5800; port <= 5807; port++)
@@ -39,11 +38,15 @@ public class Robot extends TimedRobot
             PortForwarder.add(port, "10.33.9.11", port);
         }
 
-        //CameraServer.startAutomaticCapture();
-
-        m_robotContainer.drivetrain.getDaqThread().setThreadPriority(99);
+        RobotContainer.drivetrain.getDaqThread().setThreadPriority(99);
 
         System.out.println("Robot Initialized!");
+
+        CommandScheduler.getInstance().schedule(Commands.sequence(
+            Commands.runOnce(() -> LimelightHelpers.setLEDMode_ForceBlink("")),
+            Commands.waitSeconds(0.5),
+            Commands.runOnce(() -> LimelightHelpers.setLEDMode_ForceOff(""))
+        ).ignoringDisable(true));
 
     }
 
@@ -72,7 +75,9 @@ public class Robot extends TimedRobot
         SmartDashboard.putNumber("Target Ta", LimelightHelpers.getTA(""));
 
         // -- Output the robot orientation to the dashboard
-        SmartDashboard.putNumber("Robot Yaw", m_robotContainer.drivetrain.getPigeon2().getYaw().getValue());
+        SmartDashboard.putNumber("Robot Yaw", RobotContainer.drivetrain.getPigeon2().getYaw().getValue());
+
+
 
     }
 
@@ -84,7 +89,10 @@ public class Robot extends TimedRobot
     public void disabledInit() { }
 
     @Override
-    public void disabledPeriodic() { }
+    public void disabledPeriodic()
+    {
+
+    }
 
 
     // -------------------------------------------------------------------------------------------------------------------------------------
@@ -93,12 +101,12 @@ public class Robot extends TimedRobot
     @Override
     public void autonomousInit()
     {
-        m_autonomousCommand = m_robotContainer.GetAutonomousCommand();
+        AutonomousCommand = RobotContainer.GetAutonomousCommand();
 
         // schedule the autonomous command (example)
-        if (m_autonomousCommand != null)
+        if (AutonomousCommand != null)
         {
-            m_autonomousCommand.schedule();
+            AutonomousCommand.schedule();
         }
     }
 
@@ -116,11 +124,13 @@ public class Robot extends TimedRobot
         // teleop starts running. If you want the autonomous to
         // continue until interrupted by another command, remove
         // this line or comment it out.
-        if (m_autonomousCommand != null)
+        if (AutonomousCommand != null)
         {
-            m_autonomousCommand.cancel();
+            AutonomousCommand.cancel();
         }
 
+        RobotContainer.Arm.Command_SetNeutralMode(NeutralModeValue.Brake);
+        RobotContainer.Intake.Command_SetNeutralMode(NeutralModeValue.Brake);
     }
 
     @Override

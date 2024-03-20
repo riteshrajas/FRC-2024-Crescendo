@@ -2,10 +2,10 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 1.47,
-      "y": 5.555088802485298
+      "x": 0.9095172036497934,
+      "y": 4.568394521404429
     },
-    "rotation": 180.0
+    "rotation": 125.0
   },
   "command": {
     "type": "sequential",
@@ -38,37 +38,13 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 1.0
+            "waitTime": 0.1
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "middle rotate"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 1.0
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "middle score preload and spike note"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Arm Stow"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.5
+            "pathName": "source side spike"
           }
         },
         {
@@ -80,7 +56,37 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 0.5
+            "waitTime": 0.2
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot Speaker"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Arm Stow"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Copy of source side spike"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Arm Score"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.2
           }
         },
         {

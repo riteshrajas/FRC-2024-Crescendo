@@ -32,11 +32,11 @@
     },
     {
       "anchor": {
-        "x": 2.2743082290729473,
+        "x": 1.43,
         "y": 5.555088802485298
       },
       "prevControl": {
-        "x": 2.268635792621082,
+        "x": 1.4243275635481345,
         "y": 5.574358195791997
       },
       "nextControl": null,
@@ -48,6 +48,11 @@
     {
       "waypointRelativePos": 0.35,
       "rotationDegrees": 0.0,
+      "rotateFast": false
+    },
+    {
+      "waypointRelativePos": 1.7,
+      "rotationDegrees": 180.0,
       "rotateFast": false
     }
   ],
@@ -64,12 +69,6 @@
               "type": "named",
               "data": {
                 "name": "Intake Note"
-              }
-            },
-            {
-              "type": "named",
-              "data": {
-                "name": "Arm Score"
               }
             }
           ]

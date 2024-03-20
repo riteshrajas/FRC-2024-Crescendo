@@ -28,7 +28,8 @@ public class ArmSubsystem extends SubsystemBase
         Shoot_wing(LowerLimit), //TODO: tune when added
         Climb_FirstPos(UpperLimit),
         Amp(0.169),
-        Trap(LowerLimit);
+        Trap(LowerLimit),
+        Source(-0.05);
 
         private final double Rotations;
 
@@ -139,7 +140,7 @@ public class ArmSubsystem extends SubsystemBase
 
     public Command Command_Climb()
     {
-        return runOnce(() -> LeftMotor.setControl(ClimbRequest));
+        return runOnce(() -> LeftMotor.setControl(ClimbRequest.withPosition(LowerLimit)));
     }
 
     public Command Command_ZeroArmEncoder()
@@ -150,17 +151,18 @@ public class ArmSubsystem extends SubsystemBase
     public Command Command_ManualArmControl()
     {
         return runOnce(() -> ManualArmControlTarget = LeftMotor.getPosition().getValue())
-                .andThen(run(() ->
-                {
-                    double y = RobotContainer.Operator.getLeftY() * 0.1;
-                    if (Math.abs(y) < 0.1) { return; }
+            .andThen(run(() ->
+            {
+                double y = RobotContainer.Operator.getLeftY() * 0.001;
+                if (Math.abs(y) < 0.001) { return; }
 
-                    ManualArmControlTarget = MathUtil.clamp(ManualArmControlTarget + y, LowerLimit, UpperLimit);
-                    LeftMotor.setControl(PoseRequest.withPosition(ManualArmControlTarget));
-                }));
+                ManualArmControlTarget = MathUtil.clamp(ManualArmControlTarget + y, LowerLimit, UpperLimit);
+                //LeftMotor.setControl(PoseRequest.withPosition(ManualArmControlTarget));
+                LeftMotor.setControl(ClimbRequest.withPosition(ManualArmControlTarget));
+            }));
     }
 
-    public Command Command_SetCoastMode(NeutralModeValue mode)
+    public Command Command_SetNeutralMode(NeutralModeValue mode)
     {
         return runOnce(() -> {
             LeftMotor.setNeutralMode(mode);
