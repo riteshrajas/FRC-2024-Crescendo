@@ -42,6 +42,7 @@ public class IntakeSubsystem extends SubsystemBase
     {
         amp(-0.5),
         speaker(-1), // known value = -60,  to testing value: 74
+        None(0),
 
         trap(0);
 

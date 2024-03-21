@@ -64,13 +64,9 @@ public class RobotContainer
         .AddValue(0.35, 0.05)
         .AddValue(0.75, 0.2);
 
-    private DriverStation.Alliance DefaultAlliance = DriverStation.Alliance.Blue;
+    private final DriverStation.Alliance DefaultAlliance = DriverStation.Alliance.Blue;
 
     private DriverStation.Alliance CurrentAlliance = DriverStation.getAlliance().get();
-
-
-
-
 
     // --------------------------------------------------------------------------------------------
     // -- Subsystems
@@ -174,8 +170,12 @@ public class RobotContainer
 
     public Command Command_AutoPose()
     {
-        return Commands.runOnce(() -> Pose.Command_GoToPose(Pose.GetPoseForCurrentTag()));
+        return Commands.runOnce(() -> Pose.Command_GoToPose(GetPoseForTag()));
+
     }
+
+    //    {return Commands.runOnce(() -> Pose.Command_GoToPose(Pose.GetPoseForCurrentTag()));}
+
 
     private void ConfigureAutoCommands()
     {
@@ -271,6 +271,20 @@ public class RobotContainer
 
         // -- Align
         Driver.rightBumper().whileTrue(Command_AlignToTag());
+
+//        Driver.rightBumper().onFalse(Commands.sequence(
+//            Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp)
+//        ));
+
+//        Driver.rightBumper().onFalse(Commands.sequence(
+//            Commands.waitSeconds(1),
+//            Command_AutoPose()
+//        ));
+
+        // -- Testing for autoPosing and Outtaking depending on apriltag
+        Driver.a().onTrue(Command_AutoPose());
+        Driver.b().onTrue(Intake.Command_Outtake(GetOuttakeType()));
+
     }
     
     
@@ -360,6 +374,8 @@ public class RobotContainer
         double posX = pose.getTranslation().getX();
         double angleY = pose.getRotation().getY();
 
+        double rotationalOffset = 0.05;
+
         SmartDashboard.putNumber("Target.posX", posX);
         SmartDashboard.putNumber("Target.posY", posY);
         SmartDashboard.putNumber("Target.angleY", angleY);
@@ -367,7 +383,64 @@ public class RobotContainer
         return driveRobotCentric
             .withVelocityX(-(posY + 1))
             .withVelocityY(posX * 2)
-            .withRotationalRate(angleY * 7);
+            .withRotationalRate((angleY + rotationalOffset) * 7);
     }
+
+    public PoseManager.EPose GetPoseForTag()
+    {
+        var target = Vision.GetBestTarget();
+
+        var id = target.fiducialID;
+
+        if (target == null) {
+            System.out.println("No target");
+            return PoseManager.EPose.None; }
+
+        if (id == 4 || id == 7)
+        {
+            System.out.println("SpeakerPose");
+            return PoseManager.EPose.Speaker;
+        }
+        else if (id == 5 || id == 6)
+        {
+            System.out.println("AmpPose");
+            return PoseManager.EPose.Amp;
+        }
+        else if (id >= 11 || id <= 16)
+        {
+            System.out.println("Climb");
+            return PoseManager.EPose.PreClimb;
+        }
+        System.out.println("No Pose");
+        return PoseManager.EPose.None;
+    }
+
+    public IntakeSubsystem.EOutakeType GetOuttakeType()
+    {
+        var target = Vision.GetBestTarget();
+        var id = target.fiducialID;
+
+        if (target == null)
+        {
+            System.out.println("No target");
+            return IntakeSubsystem.EOutakeType.None;
+        }
+
+        if (id == 5 || id == 6)
+        {
+            System.out.println("Amp Outtake");
+            return IntakeSubsystem.EOutakeType.amp;
+        }
+        else if (id == 4 || id == 7)
+        {
+            System.out.println("Speaker Outtake");
+            return IntakeSubsystem.EOutakeType.speaker;
+        }
+
+        System.out.println("No outtake type");
+        return IntakeSubsystem.EOutakeType.None;
+
+    }
+
     
 }

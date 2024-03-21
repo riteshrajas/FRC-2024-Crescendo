@@ -36,17 +36,20 @@ public class PoseManager
 
         if (target.fiducialID == 4 || target.fiducialID == 7)
         {
+            System.out.println("SpeakerPose");
             return EPose.Speaker;
         }
         else if (target.fiducialID == 5 || target.fiducialID == 6)
         {
+            System.out.println("AmpPose");
             return EPose.Amp;
         }
         else if (target.fiducialID >= 11 || target.fiducialID <= 16)
         {
+            System.out.println("Climb");
             return EPose.PreClimb;
         }
-
+        System.out.println("No Pose");
         return EPose.None;
     }
 
@@ -113,9 +116,9 @@ public class PoseManager
     }
 
 
-//    public Command Command_AutoPose()
-//    {
-//        return Command_GoToPose(GetPoseForCurrentTag());
-//    }
+    public Command Command_AutoPose()
+    {
+        return Command_GoToPose(GetPoseForCurrentTag());
+    }
 
 }

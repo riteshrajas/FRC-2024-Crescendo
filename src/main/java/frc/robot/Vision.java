@@ -59,7 +59,7 @@ public class Vision
         return bestTarget;
     }
 
-    static  public LimelightHelpers.LimelightTarget_Detector GetBestNoteTarget()
+    static public LimelightHelpers.LimelightTarget_Detector GetBestNoteTarget()
     {
         LimelightHelpers.LimelightTarget_Detector bestNoteTarget = null;
 
@@ -73,5 +73,45 @@ public class Vision
         return bestNoteTarget;
     }
 
+    static public double GetDistanceFromTarget()
+    {
+        var target = GetBestTarget();
+        if (target == null){ return 0; }
+
+        double OffsetAngle = 0.0;
+
+        double LimelightMountHeight = 24.5;
+
+        double LimelightMountAngle = 13.0;
+
+        double GoalHeight = 0;
+
+        if (ValidTags.contains((int)target.fiducialID))
+        {
+            if (target.fiducialID == 5 || target.fiducialID == 6)
+            {
+                GoalHeight = 53.38;
+            }
+            else if (target.fiducialID == 4 || target.fiducialID == 7)
+            {
+                GoalHeight = 57.13;
+            }
+        }
+
+        double AngleToGoalRadians = LimelightMountAngle + OffsetAngle;
+        double AngleToGoalDegrees = AngleToGoalRadians * (Math.PI / 180);
+
+        double distance = (GoalHeight - LimelightMountHeight) / Math.tan(LimelightMountAngle + AngleToGoalDegrees);
+
+        return distance;
+    }
+
+    public static void OutputData()
+    {
+        var distance = GetDistanceFromTarget();
+        var target = GetBestTarget();
+
+        SmartDashboard.putNumber("Distance from Target", distance);
+    }
 
 }
