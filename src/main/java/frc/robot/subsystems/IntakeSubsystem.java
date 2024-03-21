@@ -8,7 +8,6 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.*;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.Constants;
@@ -16,7 +15,7 @@ import frc.robot.Constants;
 import com.ctre.phoenix6.configs.*;
 import frc.robot.LimelightHelpers;
 import frc.robot.RobotContainer;
-//*TODO: Find acutal poses, work out motor configurations, do commmands  and logic for moving pivot
+//*TODO: Find actual poses, work out motor configurations, do commands  and logic for moving pivot
 
 
 
@@ -38,7 +37,7 @@ public class IntakeSubsystem extends SubsystemBase
         EPivotPosition(double rotations) { Rotations = rotations; }
     }
 
-    public enum EOutakeType
+    public enum EOuttakeType
     {
         amp(-0.5),
         speaker(-1), // known value = -60,  to testing value: 74
@@ -47,7 +46,7 @@ public class IntakeSubsystem extends SubsystemBase
         trap(0);
 
         private final double DutyCycle;
-        EOutakeType(double dutyCycle) { DutyCycle = dutyCycle; }
+        EOuttakeType(double dutyCycle) { DutyCycle = dutyCycle; }
     }
 
     enum EFeedType
@@ -66,7 +65,7 @@ public class IntakeSubsystem extends SubsystemBase
     static private final double PivotLimitForward = 0.325;
     static private final double PivotLimitReverse = -0.31;
 
-    // Since we zero on the hard stop, add this buffer to when going home so we don't slam into the stop.
+    // Since we zero on the hard stop, add this buffer to when going home, so we don't slam into the stop.
     static private final double PivotLimitReverseBuffer = 0.02;
 
 
@@ -77,7 +76,7 @@ public class IntakeSubsystem extends SubsystemBase
     private SparkPIDController FeederMotorPID;
 
 
-    // -- Pheonix Requests
+    // -- Phoenix Requests
     private final MotionMagicExpoTorqueCurrentFOC PivotRequest = new MotionMagicExpoTorqueCurrentFOC(0);
 
 //    private final VelocityTorqueCurrentFOC IntakeRequest = new VelocityTorqueCurrentFOC(0);
@@ -379,7 +378,7 @@ public class IntakeSubsystem extends SubsystemBase
     }
 
 
-    public Command Command_Outtake(EOutakeType outtakeType)
+    public Command Command_Outtake(EOuttakeType outtakeType)
     {
         return Commands.sequence(
             runOnce(() -> IntakeMotor.setControl(IntakeRequest.withOutput(outtakeType.DutyCycle))),

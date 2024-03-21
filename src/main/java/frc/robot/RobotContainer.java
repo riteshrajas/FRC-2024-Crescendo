@@ -120,7 +120,7 @@ public class RobotContainer
         autoChooser.addOption("Score Preload", Commands.sequence(
             Pose.Command_GoToPose(PoseManager.EPose.Speaker),
             Commands.waitSeconds(0.5),
-            Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker),
+            Intake.Command_Outtake(IntakeSubsystem.EOuttakeType.speaker),
             Pose.Command_GoToPose(PoseManager.EPose.Stowed)));
 
         SetDefaultCommands();
@@ -188,7 +188,7 @@ public class RobotContainer
             .andThen(Intake.Command_StopIntake()));
         NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
         NamedCommands.registerCommand("Condition Stop Intake", Intake.Command_ConditionalStowAuto());
-        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker).withTimeout(0.5).andThen(Intake.Command_StopIntake()));
+        NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOuttakeType.speaker).withTimeout(0.5).andThen(Intake.Command_StopIntake()));
     }
     
     public Command GetAutonomousCommand()
@@ -225,7 +225,7 @@ public class RobotContainer
     private void ConfigureDriverBindings()
     {
 
-        // Slowdrive relative to bot pose
+        // Slow drive relative to bot pose
         Driver.povUp().whileTrue(drivetrain.applyRequest(() -> driveFieldCentric.withVelocityX(.5))); // Fine-tune control forwards
         Driver.povDown().whileTrue(drivetrain.applyRequest(() -> driveFieldCentric.withVelocityX(-.5))); // Fine-tune control backwards
         Driver.povRight().whileTrue(drivetrain.applyRequest(() -> driveFieldCentric.withVelocityY(-.5))); // Fine-tune control right
@@ -258,14 +258,14 @@ public class RobotContainer
         Driver.leftTrigger().onTrue(
             Commands.sequence(
                 //Pose.Command_GoToPose(PoseManager.EPose.Speaker),
-                Intake.Command_Outtake(IntakeSubsystem.EOutakeType.speaker),
+                Intake.Command_Outtake(IntakeSubsystem.EOuttakeType.speaker),
                 Pose.Command_GoToPose(PoseManager.EPose.Stowed))
         );
 
         // -- Outtake Amp
         Driver.leftBumper().onTrue(
             Commands.sequence(
-                Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp),
+                Intake.Command_Outtake(IntakeSubsystem.EOuttakeType.amp),
                 Pose.Command_GoToPose(PoseManager.EPose.Stowed))
         );
 
@@ -273,7 +273,7 @@ public class RobotContainer
         Driver.rightBumper().whileTrue(Command_AlignToTag());
 
 //        Driver.rightBumper().onFalse(Commands.sequence(
-//            Intake.Command_Outtake(IntakeSubsystem.EOutakeType.amp)
+//            Intake.Command_Outtake(IntakeSubsystem.EOuttakeType.amp)
 //        ));
 
 //        Driver.rightBumper().onFalse(Commands.sequence(
@@ -392,7 +392,8 @@ public class RobotContainer
 
         var id = target.fiducialID;
 
-        if (target == null) {
+        if (target == null)
+        {
             System.out.println("No target");
             return PoseManager.EPose.None; }
 
@@ -415,7 +416,7 @@ public class RobotContainer
         return PoseManager.EPose.None;
     }
 
-    public IntakeSubsystem.EOutakeType GetOuttakeType()
+    public IntakeSubsystem.EOuttakeType GetOuttakeType()
     {
         var target = Vision.GetBestTarget();
         var id = target.fiducialID;
@@ -423,22 +424,22 @@ public class RobotContainer
         if (target == null)
         {
             System.out.println("No target");
-            return IntakeSubsystem.EOutakeType.None;
+            return IntakeSubsystem.EOuttakeType.None;
         }
 
         if (id == 5 || id == 6)
         {
             System.out.println("Amp Outtake");
-            return IntakeSubsystem.EOutakeType.amp;
+            return IntakeSubsystem.EOuttakeType.amp;
         }
         else if (id == 4 || id == 7)
         {
             System.out.println("Speaker Outtake");
-            return IntakeSubsystem.EOutakeType.speaker;
+            return IntakeSubsystem.EOuttakeType.speaker;
         }
 
         System.out.println("No outtake type");
-        return IntakeSubsystem.EOutakeType.None;
+        return IntakeSubsystem.EOuttakeType.None;
 
     }
 
