@@ -32,31 +32,31 @@
     },
     {
       "anchor": {
-        "x": 7.790112242136038,
-        "y": 5.703177397795595
+        "x": 8.680135819615433,
+        "y": 4.4
       },
       "prevControl": {
-        "x": 7.140379257700827,
-        "y": 5.8937006037578
+        "x": 8.030402835180222,
+        "y": 4.590523205962206
       },
       "nextControl": {
-        "x": 9.347653502724977,
-        "y": 5.246454772510115
+        "x": 10.237677080204373,
+        "y": 3.943277374714521
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 4.214943045270707,
+        "x": 4.323704624584711,
         "y": 6.8039960330990565
       },
       "prevControl": {
-        "x": 5.030492002072769,
+        "x": 5.1392535813867735,
         "y": 6.786643927635183
       },
       "nextControl": {
-        "x": 3.664533727618976,
+        "x": 3.77329530693298,
         "y": 6.815706869644838
       },
       "isLocked": false,
@@ -64,12 +64,12 @@
     },
     {
       "anchor": {
-        "x": 0.9392728628538557,
-        "y": 6.5463576290918635
+        "x": 1.2554654495899562,
+        "y": 6.2887192250846695
       },
       "prevControl": {
-        "x": 1.9815373154284097,
-        "y": 6.90939356201109
+        "x": 2.29772990216451,
+        "y": 6.651755158003896
       },
       "nextControl": null,
       "isLocked": false,
@@ -79,7 +79,7 @@
   "rotationTargets": [
     {
       "waypointRelativePos": 1.95,
-      "rotationDegrees": -10.0,
+      "rotationDegrees": -20.0,
       "rotateFast": true
     }
   ],
@@ -111,7 +111,7 @@
       "minWaypointRelativePos": 3.6,
       "maxWaypointRelativePos": 4.0,
       "constraints": {
-        "maxVelocity": 2.0,
+        "maxVelocity": 3.0,
         "maxAcceleration": 2.5,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0
@@ -120,27 +120,10 @@
   ],
   "eventMarkers": [
     {
-      "name": "Stow",
-      "waypointRelativePos": 0,
+      "name": "Intake",
+      "waypointRelativePos": 1.3,
       "command": {
         "type": "sequential",
-        "data": {
-          "commands": [
-            {
-              "type": "named",
-              "data": {
-                "name": "Arm Stow"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "name": "Intake",
-      "waypointRelativePos": 1.4,
-      "command": {
-        "type": "parallel",
         "data": {
           "commands": [
             {
@@ -158,24 +141,13 @@
             {
               "type": "named",
               "data": {
-                "name": "stop Intake motors"
+                "name": "Bump Note"
               }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "name": "Move Arm to Score",
-      "waypointRelativePos": 2.75,
-      "command": {
-        "type": "sequential",
-        "data": {
-          "commands": [
+            },
             {
               "type": "named",
               "data": {
-                "name": "Arm Score"
+                "name": "Bump Note"
               }
             }
           ]
@@ -191,7 +163,7 @@
   },
   "goalEndState": {
     "velocity": 0.0,
-    "rotation": -125.0,
+    "rotation": -130.0,
     "rotateFast": false
   },
   "reversed": false,

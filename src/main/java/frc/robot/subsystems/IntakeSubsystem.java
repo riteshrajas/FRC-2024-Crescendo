@@ -370,8 +370,8 @@ public class IntakeSubsystem extends SubsystemBase
     {
         return startEnd(
             () -> {
-                IntakeMotor.setControl(IntakeRequest.withOutput(forward ? -0.25: 0.25));
-                FeederMotor.set(forward ? 0.15: -0.15);
+                IntakeMotor.setControl(IntakeRequest.withOutput(forward ? -0.5: 0.5));
+                FeederMotor.set(forward ? 0.3: -0.3);
             },
             () -> StopMotors()
         );

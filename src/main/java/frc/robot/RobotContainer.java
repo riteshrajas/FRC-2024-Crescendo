@@ -181,11 +181,9 @@ public class RobotContainer
     {
         NamedCommands.registerCommand("Arm Score", Pose.Command_GoToPose(PoseManager.EPose.Speaker));
         NamedCommands.registerCommand("Arm Stow", Pose.Command_GoToPose(PoseManager.EPose.Stowed));
-        NamedCommands.registerCommand("Intake Note",
-            Command_IntakeNoteSequence(false)
-            .withTimeout(2.5)
-            .andThen(Pose.Command_GoToPose(PoseManager.EPose.Stowed))
-            .andThen(Intake.Command_StopIntake()));
+        NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence(false).withTimeout(2.5));
+        NamedCommands.registerCommand("Bump Note", Intake.Command_MoveNote(false).withTimeout(1));
+
         NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
         NamedCommands.registerCommand("Condition Stop Intake", Intake.Command_ConditionalStowAuto());
         NamedCommands.registerCommand("Shoot Speaker", Intake.Command_Outtake(IntakeSubsystem.EOuttakeType.speaker).withTimeout(0.5).andThen(Intake.Command_StopIntake()));
@@ -389,13 +387,13 @@ public class RobotContainer
     public PoseManager.EPose GetPoseForTag()
     {
         var target = Vision.GetBestTarget();
-
-        var id = target.fiducialID;
-
         if (target == null)
         {
             System.out.println("No target");
             return PoseManager.EPose.None; }
+
+        var id = target.fiducialID;
+
 
         if (id == 4 || id == 7)
         {
@@ -419,13 +417,12 @@ public class RobotContainer
     public IntakeSubsystem.EOuttakeType GetOuttakeType()
     {
         var target = Vision.GetBestTarget();
-        var id = target.fiducialID;
-
         if (target == null)
         {
             System.out.println("No target");
             return IntakeSubsystem.EOuttakeType.None;
         }
+        var id = target.fiducialID;
 
         if (id == 5 || id == 6)
         {
