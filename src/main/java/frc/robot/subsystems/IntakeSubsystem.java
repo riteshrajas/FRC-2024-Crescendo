@@ -33,7 +33,7 @@ public class IntakeSubsystem extends SubsystemBase
         Source(-0.237),
         Unstick(-0.166);
 
-        private final double Rotations;
+        public final double Rotations;
         EPivotPosition(double rotations) { Rotations = rotations; }
     }
 
@@ -226,16 +226,22 @@ public class IntakeSubsystem extends SubsystemBase
 
     public Command Command_SetPivotPosition(EPivotPosition position)
     {
+        return Command_GoToPivotPosition(position.Rotations);
+    }
+
+    public Command Command_GoToPivotPosition(double position)
+    {
+        var pos = MathUtil.clamp(position, PivotLimitReverse, PivotLimitForward);
         return run(() ->
-        {
-            SmartDashboard.putNumber("Intake.PivotTarget", position.Rotations);
-            PivotMotor.setControl(PivotRequest.withPosition(position.Rotations));
-        })
-        .until(() ->
-        {
-            double actualRotation = PivotMotor.getPosition().getValue();
-            return MathUtil.isNear(position.Rotations, actualRotation, PivotTolerance);
-        });
+                   {
+                       SmartDashboard.putNumber("Intake.PivotTarget", pos);
+                       PivotMotor.setControl(PivotRequest.withPosition(pos));
+                   })
+            .until(() ->
+                   {
+                       double actualRotation = PivotMotor.getPosition().getValue();
+                       return MathUtil.isNear(pos, actualRotation, PivotTolerance);
+                   });
     }
 
     public Command Command_SetNeutralMode(NeutralModeValue mode)

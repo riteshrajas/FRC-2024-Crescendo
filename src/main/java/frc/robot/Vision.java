@@ -106,12 +106,12 @@ public class Vision
         return distance;
     }
 
-    public static void OutputData()
+    public static double ReturnDistance()
     {
-        var distance = GetDistanceFromTarget();
         var target = GetBestTarget();
+        if (target == null) { return 0; }
 
-        SmartDashboard.putNumber("Distance from Target", distance);
+        return target.getRobotPose_TargetSpace().getTranslation().getZ();
     }
 
 }

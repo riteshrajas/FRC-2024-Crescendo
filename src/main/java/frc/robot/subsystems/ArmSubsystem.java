@@ -31,7 +31,7 @@ public class ArmSubsystem extends SubsystemBase
         Trap(LowerLimit),
         Source(-0.05);
 
-        private final double Rotations;
+        public final double Rotations;
 
         EArmPosition(double rotations) {
             Rotations = rotations;
@@ -124,18 +124,7 @@ public class ArmSubsystem extends SubsystemBase
     }
 
     public Command Command_SetPosition(EArmPosition position) {
-        return
-            run(() ->
-            {
-                SmartDashboard.putNumber("Arm.Target", position.Rotations);
-                LeftMotor.setControl(PoseRequest.withPosition(position.Rotations));
-            })
-            .until(() ->
-            {
-                double actualRotation = LeftMotor.getPosition().getValue();
-                SmartDashboard.putNumber("Arm.Error", position.Rotations - actualRotation);
-                return MathUtil.isNear(position.Rotations, actualRotation, ArmTolerance);
-            });
+        return Command_GoToPosition(position.Rotations);
     }
 
     public Command Command_Climb()
@@ -168,6 +157,23 @@ public class ArmSubsystem extends SubsystemBase
             LeftMotor.setNeutralMode(mode);
             RightMotor.setNeutralMode(mode);
         }).ignoringDisable(true);
+    }
+
+    public Command Command_GoToPosition(double armPosition)
+    {
+        var pos = MathUtil.clamp(armPosition, LowerLimit, UpperLimit);
+        return
+            run(() ->
+                {
+                    SmartDashboard.putNumber("Arm.Target", pos);
+                    LeftMotor.setControl(PoseRequest.withPosition(pos));
+                })
+                .until(() ->
+                       {
+                           double actualRotation = LeftMotor.getPosition().getValue();
+                           SmartDashboard.putNumber("Arm.Error", pos - actualRotation);
+                           return MathUtil.isNear(pos, actualRotation, ArmTolerance);
+                       });
     }
 
     @Override

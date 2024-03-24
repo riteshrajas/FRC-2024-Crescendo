@@ -10,7 +10,9 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
@@ -28,6 +30,7 @@ import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import friarLib2.math.LookupTable;
 
+import java.util.Set;
 
 
 public class RobotContainer
@@ -81,9 +84,9 @@ public class RobotContainer
     // --------------------------------------------------------------------------------------------
     // -- Drive requests
     // --------------------------------------------------------------------------------------------
-    private final SwerveRequest.FieldCentric driveFieldCentric = new SwerveRequest.FieldCentric().withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage);
+    public final SwerveRequest.FieldCentric driveFieldCentric = new SwerveRequest.FieldCentric().withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage);
     private final SwerveRequest.FieldCentricFacingAngle driveTowardsAngle = new SwerveRequest.FieldCentricFacingAngle().withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage);
-    private final SwerveRequest.RobotCentric driveRobotCentric = new SwerveRequest.RobotCentric().withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage);
+    public final SwerveRequest.RobotCentric driveRobotCentric = new SwerveRequest.RobotCentric().withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage);
 
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
@@ -139,6 +142,11 @@ public class RobotContainer
                    () -> LimelightHelpers.setLEDMode_ForceOff(""))
                .alongWith(drivetrain.applyRequest(this::GetAlignToTagRequest));
     }
+
+    Command Command_AutoOuttake()
+    {
+        return Commands.defer(() -> Intake.Command_Outtake(GetOuttakeType()), Set.of(Intake));
+    }
     
    public Command Command_RumbleControllers()
    {
@@ -170,7 +178,7 @@ public class RobotContainer
 
     public Command Command_AutoPose()
     {
-        return Commands.runOnce(() -> Pose.Command_GoToPose(GetPoseForTag()));
+        return Commands.defer(() -> Pose.Command_GoToPose(GetPoseWithDistance()), Set.of(Intake, Arm));
 
     }
 
@@ -194,7 +202,21 @@ public class RobotContainer
         return autoChooser.getSelected();
     }
 
-    
+    public Command Command_ScoreSpeaker()
+    {
+        return Commands.sequence(
+            //Pose.Command_GoToPose(PoseManager.EPose.Speaker),
+            Intake.Command_Outtake(IntakeSubsystem.EOuttakeType.speaker),
+            Pose.Command_GoToPose(PoseManager.EPose.Stowed));
+    }
+
+    public Command Command_ScoreAmp()
+    {
+     return Commands.sequence(
+         //Pose.Command_GoToPose(PoseManager.EPose.Amp),
+         Intake.Command_Outtake(IntakeSubsystem.EOuttakeType.amp),
+         Pose.Command_GoToPose(PoseManager.EPose.Stowed)) ;
+    }
     
     private void SetDefaultCommands()
     {
@@ -254,21 +276,16 @@ public class RobotContainer
 
         // -- Outtake speaker
         Driver.leftTrigger().onTrue(
-            Commands.sequence(
-                //Pose.Command_GoToPose(PoseManager.EPose.Speaker),
-                Intake.Command_Outtake(IntakeSubsystem.EOuttakeType.speaker),
-                Pose.Command_GoToPose(PoseManager.EPose.Stowed))
+            Command_ScoreSpeaker()
         );
 
         // -- Outtake Amp
         Driver.leftBumper().onTrue(
-            Commands.sequence(
-                Intake.Command_Outtake(IntakeSubsystem.EOuttakeType.amp),
-                Pose.Command_GoToPose(PoseManager.EPose.Stowed))
+            Command_ScoreAmp()
         );
 
         // -- Align
-        Driver.rightBumper().whileTrue(Command_AlignToTag());
+        Driver.rightBumper().whileTrue(new AutoTagCommand());
 
 //        Driver.rightBumper().onFalse(Commands.sequence(
 //            Intake.Command_Outtake(IntakeSubsystem.EOuttakeType.amp)
@@ -281,7 +298,6 @@ public class RobotContainer
 
         // -- Testing for autoPosing and Outtaking depending on apriltag
         Driver.a().onTrue(Command_AutoPose());
-        Driver.b().onTrue(Intake.Command_Outtake(GetOuttakeType()));
 
     }
     
@@ -317,7 +333,7 @@ public class RobotContainer
         Operator.rightTrigger().onFalse(Pose.Command_GoToPose(PoseManager.EPose.Stowed).andThen(Commands.runOnce(() -> Intake.RequestCancelIntake())));
     }
 
-    private SwerveRequest GetDefaultDriveRequest()
+    public Pose2d GetVelocityForThrottle()
     {
         double y = Driver.getLeftX();
         double x = Driver.getLeftY();
@@ -326,27 +342,30 @@ public class RobotContainer
         double deflectionLut = ThrottleLut.GetValue(deflection);
         if (deflectionLut == 0)
         {
-            return driveFieldCentric
-                .withVelocityX(0)
-                .withVelocityY(0)
-                .withRotationalRate(GetDefaultDriveRotationRate());
+            return new Pose2d();
         }
 
         double finalX = x * deflectionLut * TunerConstants.kSpeedAt12VoltsMps;
         double finalY = y * deflectionLut * TunerConstants.kSpeedAt12VoltsMps;
+        return new Pose2d(-finalX, -finalY, new Rotation2d());
+    }
+
+    public SwerveRequest GetDefaultDriveRequest()
+    {
+        var output = GetVelocityForThrottle();
 
         if (RotationModeIsRobotCentric)
         {
             return driveRobotCentric
-                .withVelocityX(-finalX)
-                .withVelocityY(-finalY)
+                .withVelocityX(output.getX())
+                .withVelocityY(output.getY())
                 .withRotationalRate(GetDefaultDriveRotationRate());
         }
         else
         {
             return driveFieldCentric
-                .withVelocityX(-finalX)
-                .withVelocityY(-finalY)
+                .withVelocityX(output.getX())
+                .withVelocityY(output.getY())
                 .withRotationalRate(GetDefaultDriveRotationRate());
         }
     }
@@ -384,7 +403,7 @@ public class RobotContainer
             .withRotationalRate((angleY + rotationalOffset) * 7);
     }
 
-    public PoseManager.EPose GetPoseForTag()
+    public PoseManager.EPose GetPoseWithDistance()
     {
         var target = Vision.GetBestTarget();
         if (target == null)
@@ -393,21 +412,31 @@ public class RobotContainer
             return PoseManager.EPose.None; }
 
         var id = target.fiducialID;
-
+        var distance = Vision.ReturnDistance();
 
         if (id == 4 || id == 7)
         {
             System.out.println("SpeakerPose");
-            return PoseManager.EPose.Speaker;
+            if (distance <= -1.488)
+            {
+                return PoseManager.EPose.Speaker;
+            }
+            else
+            { return PoseManager.EPose.Stowed; }
         }
         else if (id == 5 || id == 6)
         {
             System.out.println("AmpPose");
             return PoseManager.EPose.Amp;
         }
-        else if (id >= 11 || id <= 16)
+        else if (id == 9 || id == 10 || id == 2 || id == 1)
         {
-            System.out.println("Climb");
+            System.out.println("Source Pose");
+            return PoseManager.EPose.Source;
+        }
+        else if (id == 11 || id == 12 || id == 13 || id == 14 || id == 15 || id == 16)
+        {
+            System.out.println("Climb Pose");
             return PoseManager.EPose.PreClimb;
         }
         System.out.println("No Pose");
@@ -440,5 +469,18 @@ public class RobotContainer
 
     }
 
-    
+//    public Command Command_CommandForTag()
+//    {
+//        var target = Vision.GetBestTarget();
+//        if (target == null) { return Commands.none(); }
+//
+//        var id = target.fiducialID;
+//
+//        if (id == 4 || id == 7)
+//        {
+//            return Command_ScoreSpeaker();
+//        }
+//    }
+
+
 }
