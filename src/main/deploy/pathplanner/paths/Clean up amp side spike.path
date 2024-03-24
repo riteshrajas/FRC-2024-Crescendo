@@ -3,41 +3,41 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.27,
+        "x": 2.48,
         "y": 5.56
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.8292964403332503,
-        "y": 6.417538427088266
+        "x": 2.6641875081753006,
+        "y": 6.312140898176232
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.4148382676223257,
-        "y": 7.0733452736520315
+        "x": 2.8,
+        "y": 7.213875312201409
       },
       "prevControl": {
-        "x": 1.572797466405281,
-        "y": 7.1493858174473415
+        "x": 2.8468433461831255,
+        "y": 7.319272841113443
       },
       "nextControl": {
-        "x": 3.0632425067132565,
-        "y": 7.014791090923124
+        "x": 2.6769313008282696,
+        "y": 6.936970739065015
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.27,
-        "y": 5.56
+        "x": 2.48,
+        "y": 5.66
       },
       "prevControl": {
-        "x": 1.1149354110405783,
-        "y": 7.178742802564065
+        "x": 2.7578742005415524,
+        "y": 6.581490138729208
       },
       "nextControl": null,
       "isLocked": false,
@@ -47,24 +47,48 @@
   "rotationTargets": [
     {
       "waypointRelativePos": 1.3,
-      "rotationDegrees": 0.0,
+      "rotationDegrees": 75.0,
       "rotateFast": true
     }
   ],
   "constraintZones": [
     {
       "name": "New Constraints Zone",
-      "minWaypointRelativePos": 1.25,
-      "maxWaypointRelativePos": 1.65,
+      "minWaypointRelativePos": 1.3,
+      "maxWaypointRelativePos": 1.7,
       "constraints": {
-        "maxVelocity": 1.0,
-        "maxAcceleration": 0.5,
+        "maxVelocity": 2.0,
+        "maxAcceleration": 2.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0
       }
     }
   ],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "New Event Marker",
+      "waypointRelativePos": 0,
+      "command": {
+        "type": "sequential",
+        "data": {
+          "commands": [
+            {
+              "type": "named",
+              "data": {
+                "name": "Intake Note"
+              }
+            },
+            {
+              "type": "named",
+              "data": {
+                "name": "Bump Note"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 5.18,
     "maxAcceleration": 2.5,
@@ -73,7 +97,7 @@
   },
   "goalEndState": {
     "velocity": 0.0,
-    "rotation": 180.0,
+    "rotation": 175.0,
     "rotateFast": false
   },
   "reversed": false,

@@ -181,7 +181,7 @@ public class RobotContainer
     {
         NamedCommands.registerCommand("Arm Score", Pose.Command_GoToPose(PoseManager.EPose.Speaker));
         NamedCommands.registerCommand("Arm Stow", Pose.Command_GoToPose(PoseManager.EPose.Stowed));
-        NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence(false).withTimeout(2.5));
+        NamedCommands.registerCommand("Intake Note", Command_IntakeNoteSequence(false).withTimeout(2.5).andThen(Intake.Command_StopIntake()).andThen(Pose.Command_GoToPose(PoseManager.EPose.Stowed)));
         NamedCommands.registerCommand("Bump Note", Intake.Command_MoveNote(false).withTimeout(1));
 
         NamedCommands.registerCommand("Stop Intake motors", Intake.Command_StopIntake());
@@ -281,7 +281,7 @@ public class RobotContainer
 
         // -- Testing for autoPosing and Outtaking depending on apriltag
         Driver.a().onTrue(Command_AutoPose());
-        Driver.b().onTrue(Intake.Command_Outtake(GetOuttakeType()));
+//        Driver.b().onTrue(Intake.Command_Outtake(GetOuttakeType()));
 
     }
     
@@ -387,13 +387,13 @@ public class RobotContainer
     public PoseManager.EPose GetPoseForTag()
     {
         var target = Vision.GetBestTarget();
+
+        var id = target.fiducialID;
+
         if (target == null)
         {
             System.out.println("No target");
             return PoseManager.EPose.None; }
-
-        var id = target.fiducialID;
-
 
         if (id == 4 || id == 7)
         {
@@ -417,12 +417,13 @@ public class RobotContainer
     public IntakeSubsystem.EOuttakeType GetOuttakeType()
     {
         var target = Vision.GetBestTarget();
+        var id = target.fiducialID;
+
         if (target == null)
         {
             System.out.println("No target");
             return IntakeSubsystem.EOuttakeType.None;
         }
-        var id = target.fiducialID;
 
         if (id == 5 || id == 6)
         {
@@ -440,5 +441,5 @@ public class RobotContainer
 
     }
 
-    
+
 }

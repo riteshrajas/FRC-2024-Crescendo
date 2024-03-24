@@ -2,8 +2,8 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 1.47,
-      "y": 5.555088802485298
+      "x": 1.5131038535971493,
+      "y": 5.56
     },
     "rotation": 180.0
   },
@@ -11,42 +11,6 @@
     "type": "sequential",
     "data": {
       "commands": [
-        {
-          "type": "named",
-          "data": {
-            "name": "Arm Score"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.2
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Shoot Speaker"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "middle score preload and spike note"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Shoot Speaker"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Intake center middle"
-          }
-        },
         {
           "type": "named",
           "data": {
@@ -63,6 +27,72 @@
           "type": "named",
           "data": {
             "name": "Arm Stow"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "middle rotate"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.25
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Clean upmiddle score preload and spike note"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Arm Stow"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot Speaker"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Clean up amp side spike"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Arm Stow"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot Speaker"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Clean up source side spike"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Arm Stow"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot Speaker"
           }
         }
       ]

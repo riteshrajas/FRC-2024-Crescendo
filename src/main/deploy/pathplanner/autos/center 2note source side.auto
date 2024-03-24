@@ -2,10 +2,10 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 0.85,
-      "y": 4.5
+      "x": 0.9626945359454185,
+      "y": 4.520382906671662
     },
-    "rotation": 120.0
+    "rotation": 130.0
   },
   "command": {
     "type": "sequential",
@@ -44,7 +44,31 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Copy of source side spike"
+            "pathName": "Source Side center"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Arm Score"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.2
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot Speaker"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Arm Stow"
           }
         }
       ]

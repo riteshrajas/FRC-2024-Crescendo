@@ -8,6 +8,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.*;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.Constants;
@@ -82,6 +83,9 @@ public class IntakeSubsystem extends SubsystemBase
 //    private final VelocityTorqueCurrentFOC IntakeRequest = new VelocityTorqueCurrentFOC(0);
 
     private final DutyCycleOut IntakeRequest = new DutyCycleOut(0);
+
+    private final DigitalInput LeftSwitch = new DigitalInput(1);
+    private final DigitalInput RightSwitch = new DigitalInput(2);
 
 
     double lastCurrent = 0;
@@ -253,71 +257,147 @@ public class IntakeSubsystem extends SubsystemBase
 
     public Command Command_IntakeNote(boolean fromSource)
     {
-        return Commands.sequence(
-           Commands.print("Intake note starting"),
+        if ( RightSwitch.get() && LeftSwitch.get())
+        {
+            return Commands.sequence(
+                    Commands.print("Intake Note starting"),
 
-           runOnce(() -> {
-                IsFeedingNote = false;
-                IntakeMotor.setControl(IntakeRequest.withOutput(fromSource ? EFeedType.Intake_FromSource.DutyCycle :  EFeedType.Intake_FromGround.DutyCycle));
-            }),
+                    runOnce(() ->
+                    {
+                        IsFeedingNote = false;
+                        IntakeMotor.setControl(IntakeRequest.withOutput(fromSource ? EFeedType.Intake_FromSource.DutyCycle : EFeedType.Intake_FromGround.DutyCycle));
+                    }),
 
-           Command_SetPivotPosition(fromSource ? EPivotPosition.Source : EPivotPosition.Intake),
+                    Command_SetPivotPosition(fromSource ? EPivotPosition.Source : EPivotPosition.Intake),
 
-           Commands.waitSeconds(0.25),
+                    Commands.waitSeconds(0.25),
 
-           Commands.print(fromSource ? "at source, looking for note" : "On ground, looking for note"),
+                    Commands.print(fromSource ? "At source, looking for note" : "On ground, looking for note"),
 
-           runOnce(() -> {
-               currentSpikeCount = 0;
-               lastCurrent = IntakeMotor.getStatorCurrent().getValue();
-               if (fromSource)
-               {
-                   LimelightHelpers.setLEDMode_ForceBlink("");
-               }
-            }),
+                    runOnce(() ->
+                    {
+                        currentSpikeCount = 0;
+                        lastCurrent = IntakeMotor.getStatorCurrent().getValue();
+                        if (fromSource)
+                        {
+                            LimelightHelpers.setLEDMode_ForceBlink("");
+                        }
+                    }),
 
-           Commands.waitUntil(() -> {
-                double curCurrent = IntakeMotor.getStatorCurrent().getValue();
+                    Commands.waitUntil(() ->
+                    {
+                        double curCurrent = IntakeMotor.getStatorCurrent().getValue();
+                        SmartDashboard.putNumber("Intake.currentDelta", curCurrent);
 
-                SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
+                        if (curCurrent - lastCurrent > 15)
+                        {
+                            currentSpikeCount++;
+                        }
 
-                if (curCurrent - lastCurrent > 15)
-                {
-                    currentSpikeCount++;
-                }
+                        lastCurrent = curCurrent;
+                        if (currentSpikeCount >= 1)
+                        {
+                            IsFeedingNote = true;
+                            HasGottenNote = true;
+                            LimelightHelpers.setLEDMode_ForceOff("");
+                            return true;
+                        }
+                        return false;
+                    }),
 
-                lastCurrent = curCurrent;
-                if (currentSpikeCount >= 1)
-                {
-                    IsFeedingNote = true;
-                    HasGottenNote = true;
-                    LimelightHelpers.setLEDMode_ForceOff("");
-                    return true;
-                }
-                return false;
-            }),
+                    RobotContainer.Get().Command_RumbleControllers(),
 
-           RobotContainer.Get().Command_RumbleControllers(),
+                    Commands.print("Note got - stowing"),
 
-           Commands.print("Note got - stowing"),
-           runOnce(() -> PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations))),
+                    runOnce(() -> PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations))),
 
-           Commands.print("slowing down intake, spinning up feeder"),
-           runOnce(() -> IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_ToFeeder.DutyCycle))),
-           runOnce(() -> FeederMotor.set(EFeedType.Feeder_TakeNote.DutyCycle)),
+                    Commands.print("Slowing down intake, spinning up feeder"),
+                    runOnce(() -> IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_ToFeeder.DutyCycle))),
+                    runOnce(() -> FeederMotor.set(EFeedType.Feeder_TakeNote.DutyCycle)),
 
-           Commands.waitSeconds(0.1).unless(() -> fromSource),
+                    Commands.waitSeconds(0.1).unless(() -> fromSource),
 
-           Command_FeederTakeNote(true)
-        )
-        .finallyDo(() -> {
-            if (!IsFeedingNote)
-            {
-                StopMotors();
-                LimelightHelpers.setLEDMode_ForceOff("");
+                    Command_FeederTakeNote(true)
+
+            )
+                    .finallyDo(() ->
+                    {
+                        if (!IsFeedingNote)
+                        {
+                            StopMotors();
+                            LimelightHelpers.setLEDMode_ForceOff("");
+                        }
+                    });
             }
-        });
+            return Commands.none();
     }
+//    public Command Command_IntakeNote(boolean fromSource)
+//    {
+//        return Commands.sequence(
+//           Commands.print("Intake note starting"),
+//
+//           runOnce(() -> {
+//                IsFeedingNote = false;
+//                IntakeMotor.setControl(IntakeRequest.withOutput(fromSource ? EFeedType.Intake_FromSource.DutyCycle :  EFeedType.Intake_FromGround.DutyCycle));
+//            }),
+//
+//           Command_SetPivotPosition(fromSource ? EPivotPosition.Source : EPivotPosition.Intake),
+//
+//           Commands.waitSeconds(0.25),
+//
+//           Commands.print(fromSource ? "at source, looking for note" : "On ground, looking for note"),
+//
+//           runOnce(() -> {
+//               currentSpikeCount = 0;
+//               lastCurrent = IntakeMotor.getStatorCurrent().getValue();
+//               if (fromSource)
+//               {
+//                   LimelightHelpers.setLEDMode_ForceBlink("");
+//               }
+//            }),
+//
+//           Commands.waitUntil(() -> {
+//                double curCurrent = IntakeMotor.getStatorCurrent().getValue();
+//
+//                SmartDashboard.putNumber("Intake.CurrentDelta", curCurrent - lastCurrent);
+//
+//                if (curCurrent - lastCurrent > 15)
+//                {
+//                    currentSpikeCount++;
+//                }
+//
+//                lastCurrent = curCurrent;
+//                if (currentSpikeCount >= 1)
+//                {
+//                    IsFeedingNote = true;
+//                    HasGottenNote = true;
+//                    LimelightHelpers.setLEDMode_ForceOff("");
+//                    return true;
+//                }
+//                return false;
+//            }),
+//
+//           RobotContainer.Get().Command_RumbleControllers(),
+//
+//           Commands.print("Note got - stowing"),
+//           runOnce(() -> PivotMotor.setControl(PivotRequest.withPosition(EPivotPosition.Stowed.Rotations))),
+//
+//           Commands.print("slowing down intake, spinning up feeder"),
+//           runOnce(() -> IntakeMotor.setControl(IntakeRequest.withOutput(EFeedType.Intake_ToFeeder.DutyCycle))),
+//           runOnce(() -> FeederMotor.set(EFeedType.Feeder_TakeNote.DutyCycle)),
+//
+//           Commands.waitSeconds(0.1).unless(() -> fromSource),
+//
+//           Command_FeederTakeNote(true)
+//        )
+//        .finallyDo(() -> {
+//            if (!IsFeedingNote)
+//            {
+//                StopMotors();
+//                LimelightHelpers.setLEDMode_ForceOff("");
+//            }
+//        });
+//    }
 
     public Command Command_FeederTakeNote(boolean skipWaitForSpinUp)
     {
@@ -349,8 +429,8 @@ public class IntakeSubsystem extends SubsystemBase
             Commands.waitSeconds(0.25)
 
         ).finallyDo(() -> {
-            StopMotors();
-            IsFeedingNote = false;
+                StopMotors();
+                IsFeedingNote = false;
         });
     }
 

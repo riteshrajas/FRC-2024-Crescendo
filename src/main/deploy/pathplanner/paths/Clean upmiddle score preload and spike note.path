@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.48,
-        "y": 5.66
+        "x": 1.7,
+        "y": 5.56
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.508789979263267,
-        "y": 4.614069599037914
+        "x": 2.5511515752560734,
+        "y": 5.550936522700434
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.65,
-        "y": 4.075371117931965
+        "x": 3.1174884603692163,
+        "y": 5.555088802485298
       },
       "prevControl": {
-        "x": 2.7427416909042077,
-        "y": 4.051949444840401
+        "x": 4.452523826588308,
+        "y": 5.550936522700434
       },
       "nextControl": {
-        "x": 2.588854997232394,
-        "y": 4.090813129523978
+        "x": 3.096260795772139,
+        "y": 5.555154825607095
       },
       "isLocked": false,
       "linkedName": null
@@ -33,11 +33,11 @@
     {
       "anchor": {
         "x": 2.48,
-        "y": 5.556
+        "y": 5.555088802485298
       },
       "prevControl": {
-        "x": 2.593922488900611,
-        "y": 4.649202108675259
+        "x": 2.4743275635481345,
+        "y": 5.574358195791997
       },
       "nextControl": null,
       "isLocked": false,
@@ -46,28 +46,21 @@
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 1.05,
-      "rotationDegrees": -60.0,
-      "rotateFast": true
-    }
-  ],
-  "constraintZones": [
+      "waypointRelativePos": 0.35,
+      "rotationDegrees": 3.0,
+      "rotateFast": false
+    },
     {
-      "name": "New Constraints Zone",
-      "minWaypointRelativePos": 0.55,
-      "maxWaypointRelativePos": 1.25,
-      "constraints": {
-        "maxVelocity": 0.5,
-        "maxAcceleration": 1.5,
-        "maxAngularVelocity": 540.0,
-        "maxAngularAcceleration": 720.0
-      }
+      "waypointRelativePos": 1.7,
+      "rotationDegrees": 180.0,
+      "rotateFast": false
     }
   ],
+  "constraintZones": [],
   "eventMarkers": [
     {
-      "name": "New Event Marker",
-      "waypointRelativePos": 0.15,
+      "name": "Intake",
+      "waypointRelativePos": 0,
       "command": {
         "type": "sequential",
         "data": {
@@ -90,14 +83,14 @@
     }
   ],
   "globalConstraints": {
-    "maxVelocity": 2.5,
-    "maxAcceleration": 1.5,
+    "maxVelocity": 1.0,
+    "maxAcceleration": 2.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0
   },
   "goalEndState": {
-    "velocity": 0.0,
-    "rotation": 175.0,
+    "velocity": 0,
+    "rotation": 180.0,
     "rotateFast": false
   },
   "reversed": false,

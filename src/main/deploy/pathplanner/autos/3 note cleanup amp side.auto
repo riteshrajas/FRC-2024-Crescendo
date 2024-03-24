@@ -2,10 +2,10 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 0.9095172036497934,
-      "y": 4.568394521404429
+      "x": 1.5131038535971493,
+      "y": 5.56
     },
-    "rotation": 130.0
+    "rotation": 180.0
   },
   "command": {
     "type": "sequential",
@@ -32,37 +32,25 @@
         {
           "type": "path",
           "data": {
-            "pathName": "source side spike"
+            "pathName": "middle rotate"
           }
         },
         {
-          "type": "named",
+          "type": "wait",
           "data": {
-            "name": "Arm Score"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Shoot Speaker"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Arm Stow"
+            "waitTime": 0.25
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Source Side center"
+            "pathName": "Clean upmiddle score preload and spike note"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "Arm Score"
+            "name": "Arm Stow"
           }
         },
         {
@@ -72,9 +60,21 @@
           }
         },
         {
+          "type": "path",
+          "data": {
+            "pathName": "Clean up amp side spike"
+          }
+        },
+        {
           "type": "named",
           "data": {
             "name": "Arm Stow"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot Speaker"
           }
         }
       ]
