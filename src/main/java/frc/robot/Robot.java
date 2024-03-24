@@ -78,8 +78,7 @@ public class Robot extends TimedRobot
         // -- Output the robot orientation to the dashboard
         SmartDashboard.putNumber("Robot Yaw", RobotContainer.drivetrain.getPigeon2().getYaw().getValue());
 
-        Vision.GetDistanceFromTarget();
-        Vision.OutputData();
+        SmartDashboard.putNumber("Distance To Target", Vision.ReturnDistance());
 
     }
 
