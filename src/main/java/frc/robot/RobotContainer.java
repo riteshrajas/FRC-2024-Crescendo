@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.generated.TunerConstants;
@@ -202,6 +203,19 @@ public class RobotContainer
         return autoChooser.getSelected();
     }
 
+    public Command Command_DriveForward()
+    {
+        return Commands.run(() -> driveFieldCentric.withVelocityX(1)).withTimeout(.45);
+    }
+
+    public Command Command_Stop()
+    {
+        return Commands.run(() -> driveRobotCentric
+            .withVelocityX(0)
+            .withVelocityY(0)
+            .withRotationalRate(0));
+    }
+
     public Command Command_ScoreSpeaker()
     {
         return Commands.sequence(
@@ -284,6 +298,8 @@ public class RobotContainer
             Command_ScoreAmp()
         );
 
+        Driver.x().onTrue(Command_DriveForward());
+
         // -- Align
         Driver.rightBumper().whileTrue(new AutoTagCommand());
 
@@ -298,6 +314,7 @@ public class RobotContainer
 
         // -- Testing for autoPosing and Outtaking depending on apriltag
         Driver.a().onTrue(Command_AutoPose());
+        Driver.b().whileTrue(drivetrain.applyRequest(this::GetAlignToTagRequest));
 
     }
     
