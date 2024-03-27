@@ -136,13 +136,13 @@ public class RobotContainer
         drivetrain.registerTelemetry(logger::telemeterize);
    }
    
-    Command Command_AlignToTag()
-    {
-        return Commands.startEnd(
-                   () -> LimelightHelpers.setLEDMode_ForceOn(""),
-                   () -> LimelightHelpers.setLEDMode_ForceOff(""))
-               .alongWith(drivetrain.applyRequest(this::GetAlignToTagRequest));
-    }
+//    Command Command_AlignToTag()
+//    {
+//        return Commands.startEnd(
+//                   () -> LimelightHelpers.setLEDMode_ForceOn(""),
+//                   () -> LimelightHelpers.setLEDMode_ForceOff(""))
+//               .alongWith(drivetrain.applyRequest(this::GetAlignToTagRequest));
+//    }
 
     Command Command_AutoOuttake()
     {
@@ -177,11 +177,11 @@ public class RobotContainer
         );
     }
 
-    public Command Command_AutoPose()
-    {
-        return Commands.defer(() -> Pose.Command_GoToPose(GetPoseWithDistance()), Set.of(Intake, Arm));
-
-    }
+//    public Command Command_AutoPose()
+//    {
+//        return Commands.defer(() -> Pose.Command_GoToPose(GetPoseWithDistance()), Set.of(Intake, Arm));
+//
+//    }
 
     //    {return Commands.runOnce(() -> Pose.Command_GoToPose(Pose.GetPoseForCurrentTag()));}
 
@@ -203,9 +203,9 @@ public class RobotContainer
         return autoChooser.getSelected();
     }
 
-    public Command Command_DriveForward()
+    public Command Command_DriveForward(double direction, double time)
     {
-        return Commands.run(() -> driveFieldCentric.withVelocityX(1)).withTimeout(.45);
+        return Commands.run(() -> driveFieldCentric.withVelocityX(direction)).withTimeout(time);
     }
 
     public Command Command_Stop()
@@ -283,7 +283,7 @@ public class RobotContainer
                 Commands.runOnce(() -> Intake.RequestCancelIntake()))
         );
         Driver.rightTrigger().onFalse(Commands.sequence(
-            Command_AutoPose(),
+//            Command_AutoPose(),
             Commands.waitSeconds(1),
             Pose.Command_GoToPose(PoseManager.EPose.Stowed)
         ));
@@ -298,7 +298,7 @@ public class RobotContainer
             Command_ScoreAmp()
         );
 
-        Driver.x().onTrue(Command_DriveForward());
+        Driver.x().onTrue(Command_DriveForward(1, .45));
 
         // -- Align
         Driver.rightBumper().whileTrue(new AutoTagCommand());
@@ -313,7 +313,7 @@ public class RobotContainer
 //        ));
 
         // -- Testing for autoPosing and Outtaking depending on apriltag
-        Driver.a().onTrue(Command_AutoPose());
+//        Driver.a().onTrue(Command_AutoPose());
         Driver.b().whileTrue(drivetrain.applyRequest(this::GetAlignToTagRequest));
 
     }
