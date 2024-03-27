@@ -2,7 +2,7 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 1.5131038535971493,
+      "x": 1.51,
       "y": 5.56
     },
     "rotation": 180.0
@@ -80,7 +80,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Clean up source side spike"
+            "pathName": "red Clean up source side spike"
           }
         },
         {

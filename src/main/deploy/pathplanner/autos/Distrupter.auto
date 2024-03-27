@@ -2,10 +2,10 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 0.94,
-      "y": 6.55
+      "x": 0.7753211512129142,
+      "y": 4.637491272129477
     },
-    "rotation": -125.0
+    "rotation": 125.0
   },
   "command": {
     "type": "sequential",
@@ -18,39 +18,21 @@
           }
         },
         {
-          "type": "wait",
+          "type": "named",
           "data": {
-            "waitTime": 0.2
+            "name": "Shoot Speaker"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "Shoot Speaker"
+            "name": "Arm Stow"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "amp side spike"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Shoot Speaker"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "amp side center"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Shoot Speaker"
+            "pathName": "distrupter"
           }
         }
       ]
