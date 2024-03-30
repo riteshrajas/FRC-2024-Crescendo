@@ -59,14 +59,12 @@ public class AutoTagCommand extends Command
 
         if (id == 4 || id == 7)
         {
-            name = "Speaker";
             ExecuteSpeaker();
             return;
         }
 
         if (id == 5 || id ==6)
         {
-            name = "Amp";
             ExecuteAmp();
             return;
         }
@@ -74,14 +72,12 @@ public class AutoTagCommand extends Command
 //        if (id == 1 || id == 2 || id == 9 || id == 10)
         if (id == 1 || id == 9)
         {
-            name = "Source";
             ExecuteSource();
             return;
         }
 
         if (id >= 11)
         {
-            name = "Stage";
             ExecuteStage();
         }
     }
@@ -89,15 +85,17 @@ public class AutoTagCommand extends Command
     private void ExecuteSpeaker()
     {
         double minDist = 1.52;
-        double crossOver = 2.3;
-        double maxDist = 3.4; // Might have to change
+        //double crossOver = 2.3;
+        double crossOver = 2.45;
+        double maxDist = 2.8; // Might have to change
 
         double minArmRot = -0.08;
-        double maxArmRot = ArmSubsystem.EArmPosition.Stowed.Rotations;
+        double maxArmRot = ArmSubsystem.EArmPosition.Stowed.Rotations + 0.01;
 
-        double minPivRot = IntakeSubsystem.EPivotPosition.Stowed.Rotations - 0.01;
+        double minPivRot = IntakeSubsystem.EPivotPosition.Stowed.Rotations;
         //double maxPivRot = -0.286; OG
-        double maxPivRot = -0.284;
+        double maxPivRot = -0.274;
+
 
         // -- Auto Moving Arm
         Pose3d pose = CurrentTarget.getRobotPose_TargetSpace();

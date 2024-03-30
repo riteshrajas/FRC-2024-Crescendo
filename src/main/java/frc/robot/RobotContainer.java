@@ -205,7 +205,7 @@ public class RobotContainer
 
     public Command Command_DriveForward(double direction, double time)
     {
-        return Commands.run(() -> driveFieldCentric.withVelocityX(direction)).withTimeout(time);
+        return Commands.run(() -> driveFieldCentric.withVelocityY(direction)).withTimeout(time);
     }
 
     public Command Command_Stop()
