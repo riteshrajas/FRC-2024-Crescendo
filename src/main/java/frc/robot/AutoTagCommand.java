@@ -199,7 +199,8 @@ public class AutoTagCommand extends Command
             CommandScheduler.getInstance()
                             .schedule(Commands.sequence(
                                 RobotContainer.Get().Pose.Command_GoToPose(PoseManager.EPose.Amp),
-                                RobotContainer.Get().Command_DriveForward(1, .45),
+                                RobotContainer.Get().Command_DriveForward(
+                                    1, .45),
                                 Commands.waitSeconds(.5),
                                 RobotContainer.Get().Command_ScoreAmp()
                             ));
